@@ -1,54 +1,126 @@
 import React from 'react';
-import './ProctorDashboard.css'; // Aynı CSS'i kullanabiliriz
-import { FaCalendarAlt, FaClock, FaDoorOpen, FaArrowRight } from 'react-icons/fa';
+import './ProctorDashboard.css'; // Tasarımı ortak CSS'e ekleyeceğiz
+import { 
+  FaCalendarAlt, FaClock, FaMapMarkerAlt, FaArrowRight, 
+  FaClipboardList, FaSignOutAlt, FaUserFriends, FaHourglassHalf 
+} from 'react-icons/fa';
 
 const ProctorExams = () => {
-  // Mock Sınav Listesi
+  // Mock Data: Daha detaylı sınav verileri
   const exams = [
-    { id: 1, title: "Yazılım Test ve Doğrulama", date: "09.01.2025", time: "14:00", room: "Lab-203", status: "Aktif" },
-    { id: 2, title: "Veritabanı Yönetimi", date: "10.01.2025", time: "10:00", room: "Amfi-1", status: "Planlandı" },
-    { id: 3, title: "Yapay Zeka Giriş", date: "12.01.2025", time: "13:30", room: "Online", status: "Bitti" }
+    { 
+      id: 1, 
+      code: "SENG 405",
+      title: "Yazılım Test ve Doğrulama", 
+      date: "09.01.2025", 
+      time: "14:00", 
+      duration: "60 Dk",
+      room: "Lab-203", 
+      status: "Aktif", 
+      studentCount: 45,
+      color: "green"
+    },
+    { 
+      id: 2, 
+      code: "CENG 302",
+      title: "Veritabanı Yönetimi", 
+      date: "10.01.2025", 
+      time: "10:00", 
+      duration: "90 Dk",
+      room: "Amfi-1", 
+      status: "Planlandı", 
+      studentCount: 60,
+      color: "blue"
+    },
+    { 
+      id: 3, 
+      code: "AI 101",
+      title: "Yapay Zeka Giriş", 
+      date: "12.01.2025", 
+      time: "13:30", 
+      duration: "45 Dk",
+      room: "Online", 
+      status: "Bitti", 
+      studentCount: 32,
+      color: "gray"
+    }
   ];
 
   const handleSelectExam = (examTitle) => {
-    // Sınavı seçti, detay panele gidiyoruz
     localStorage.setItem('currentExam', examTitle);
     window.location.href = '/proctor/dashboard';
   };
 
   return (
-    <div className="dashboard-wrapper" style={{padding: '40px'}}>
-      <div className="dashboard-container" style={{maxWidth: '900px'}}>
+    <div className="pe-wrapper">
+      <div className="pe-container">
         
-        <header className="dash-header">
-          <h2>Sınav Yönetim Paneli</h2>
-          <p>Merhaba Gözetmen, lütfen yönetmek istediğiniz sınavı seçiniz.</p>
+        {/* HEADER */}
+        <header className="pe-header">
+          <div className="pe-header-left">
+             <div className="pe-icon-box"><FaClipboardList /></div>
+             <div>
+                <h2>Sınav Yönetim Merkezi</h2>
+                <p>Gözetmen Paneli • Aktif Oturumlar</p>
+             </div>
+          </div>
+          <button className="btn-logout-header" onClick={() => window.location.href='/'}>
+             <FaSignOutAlt/> Çıkış Yap
+          </button>
         </header>
 
-        <div className="exams-grid" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px'}}>
+        {/* PAGE TITLE */}
+        <h3 className="section-title">Atandığınız Sınavlar</h3>
+
+        {/* EXAM CARDS GRID */}
+        <div className="pe-grid">
           {exams.map(exam => (
-            <div key={exam.id} className="student-card" style={{padding: '20px', borderLeft: exam.status === 'Aktif' ? '5px solid #28a745' : '5px solid #ccc'}}>
+            <div key={exam.id} className={`pe-card ${exam.status === 'Aktif' ? 'card-active' : ''}`}>
               
-              <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px'}}>
-                <span className={`badge ${exam.status === 'Aktif' ? 'success' : 'secondary'}`}>{exam.status}</span>
-                <small><FaCalendarAlt/> {exam.date}</small>
+              {/* Card Top: Badge & Code */}
+              <div className="card-top">
+                 <span className={`status-pill pill-${exam.color}`}>
+                    {exam.status === 'Aktif' ? '🟢 Şu An Yayında' : exam.status}
+                 </span>
+                 <span className="course-code">{exam.code}</span>
               </div>
               
-              <h3 style={{margin: '10px 0', color: '#333'}}>{exam.title}</h3>
+              {/* Card Title */}
+              <h3 className="card-title">{exam.title}</h3>
               
-              <div style={{color: '#666', fontSize: '14px', marginBottom: '20px'}}>
-                <p><FaClock/> Saat: {exam.time}</p>
-                <p><FaDoorOpen/> Derslik: {exam.room}</p>
+              {/* Meta Data Grid */}
+              <div className="meta-grid">
+                <div className="meta-item">
+                    <FaCalendarAlt className="m-icon"/> {exam.date}
+                </div>
+                <div className="meta-item">
+                    <FaClock className="m-icon"/> {exam.time}
+                </div>
+                <div className="meta-item">
+                    <FaHourglassHalf className="m-icon"/> {exam.duration}
+                </div>
+                <div className="meta-item">
+                    <FaUserFriends className="m-icon"/> {exam.studentCount} Öğr.
+                </div>
               </div>
 
-              <button 
-                className="btn-login" 
-                style={{marginTop: '0', backgroundColor: exam.status === 'Aktif' ? '#0061f2' : '#999'}}
-                onClick={() => handleSelectExam(exam.title)}
-                disabled={exam.status !== 'Aktif'}
-              >
-                {exam.status === 'Aktif' ? 'Sınava Git' : 'Beklemede'} <FaArrowRight/>
-              </button>
+              {/* Footer: Location & Action */}
+              <div className="card-footer">
+                <div className="location-info">
+                    <FaMapMarkerAlt className="loc-icon"/>
+                    <span>{exam.room}</span>
+                </div>
+
+                <button 
+                  className={`btn-action-card ${exam.status === 'Aktif' ? 'btn-pulse' : ''}`}
+                  onClick={() => handleSelectExam(exam.title)}
+                  disabled={exam.status !== 'Aktif'}
+                >
+                  {exam.status === 'Aktif' ? 'Yönet' : 'Kapalı'} 
+                  <FaArrowRight/>
+                </button>
+              </div>
+
             </div>
           ))}
         </div>
