@@ -9,7 +9,7 @@
 ## 🔗 Project Links
 
 * **Jira Board (Project Management):** [Exam Security System Board](https://taylanalp12.atlassian.net/jira/software/projects/ESS/boards/4)
-* **Live Demo:** [examsec.vercel.app]
+* **Live Demo:** [https://examsec.vercel.app]
 
 ---
 
