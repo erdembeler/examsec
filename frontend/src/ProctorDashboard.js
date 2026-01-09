@@ -1,169 +1,150 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ProctorDashboard.css';
+import { api } from './services/api';
 import { 
-  FaCheckCircle, FaExclamationTriangle, FaUserClock, FaSearch, 
-  FaCamera, FaIdCard, FaChair, FaSignOutAlt, FaUserCheck 
+  FaCheckCircle, FaExclamationTriangle, FaSearch, FaIdCard, FaSignOutAlt, FaSync
 } from 'react-icons/fa';
 
-// MOCK DATA (Gözetmen için sınıf listesi)
-const mockRoster = [
-  { id: "220706010", name: "Emre Olca", seat: "A-1", photoRef: "https://randomuser.me/api/portraits/men/32.jpg", photoLive: "https://randomuser.me/api/portraits/men/32.jpg", matchScore: 98, status: "pending" }, 
-  { id: "220706011", name: "Ayşe Yılmaz", seat: "A-2", photoRef: "https://randomuser.me/api/portraits/women/44.jpg", photoLive: null, matchScore: 0, status: "waiting" }, 
-  { id: "220706012", name: "Mehmet Demir", seat: "B-1", photoRef: "https://randomuser.me/api/portraits/men/85.jpg", photoLive: "https://randomuser.me/api/portraits/men/86.jpg", matchScore: 45, status: "violation" },
-  { id: "220706013", name: "Zeynep Kaya", seat: "B-2", photoRef: "https://randomuser.me/api/portraits/women/65.jpg", photoLive: "https://randomuser.me/api/portraits/women/65.jpg", matchScore: 99, status: "approved" },
-  { id: "220706005", name: "Burak Yılmaz", seat: "C-1", photoRef: "https://randomuser.me/api/portraits/men/11.jpg", photoLive: null, matchScore: 0, status: "waiting" },
-];
-
 const ProctorDashboard = () => {
-  const [students, setStudents] = useState(mockRoster);
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const examId = localStorage.getItem('currentExamId') || "1";
+  const examTitle = localStorage.getItem('currentExamTitle') || "General Exam";
 
-  // İsim veya Numaraya göre filtreleme
-  const filteredStudents = students.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.id.includes(searchTerm)
-  );
+  // Backend'den gelecek veriler için state
+  const [liveFeed, setLiveFeed] = useState([]);
+  const [violations, setViolations] = useState([]);
+  const [stats, setStats] = useState({ total: 0, present: 0, violation_count: 0, attendance_rate: 0 });
+  const [selectedViolation, setSelectedViolation] = useState(null);
 
-  const getStatusBadge = (status) => {
-    switch(status) {
-      case 'approved': return <span className="badge success">İçerde</span>;
-      case 'pending': return <span className="badge warning">Bekliyor</span>;
-      case 'violation': return <span className="badge danger">İhlal</span>;
-      default: return <span className="badge secondary">Gelmedi</span>;
-    }
-  };
+  // Verileri Periyodik Çek (Polling)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // 1. İstatistikleri Çek
+        const statsData = await api.getStats(examId);
+        setStats(statsData);
 
-  const handleApprove = (student) => {
-    const updatedList = students.map(s => s.id === student.id ? {...s, status: 'approved'} : s);
-    setStudents(updatedList);
-    setSelectedStudent({...student, status: 'approved'});
-  };
+        // 2. Canlı Akışı Çek (Son girenler)
+        const feedData = await api.getLiveFeed(examId);
+        setLiveFeed(feedData);
 
-  const handleReject = (student) => {
-    const reason = prompt("Reddetme sebebini giriniz (Örn: Eşleşme düşük):");
-    if(reason) {
-      const updatedList = students.map(s => s.id === student.id ? {...s, status: 'violation'} : s);
-      setStudents(updatedList);
-      setSelectedStudent({...student, status: 'violation'});
-    }
-  };
+        // 3. İhlalleri Çek
+        const violationsData = await api.getViolations(examId);
+        setViolations(violationsData);
+
+      } catch (error) {
+        console.error("Dashboard data fetch error:", error);
+      }
+    };
+
+    fetchData(); // İlk açılışta çek
+    const interval = setInterval(fetchData, 3000); // Her 3 saniyede bir yenile
+    return () => clearInterval(interval);
+  }, [examId]);
 
   return (
     <div className="dashboard-layout">
       
-      {/* SOL PANEL: LİSTE */}
+      {/* SOL PANEL: İHLAL LİSTESİ (VIOLATIONS) */}
       <div className="sidebar-list">
         <div className="sidebar-header">
           <div className="header-top">
-             <h3>Öğrenci Listesi ({filteredStudents.length})</h3>
-             <button className="btn-logout-small" onClick={() => window.location.href='/'}>
-                <FaSignOutAlt/> Çıkış
-             </button>
+             <h3>Violations / Alerts</h3>
+             <button className="btn-logout-small" onClick={() => window.location.href='/'}><FaSignOutAlt/></button>
           </div>
-          <div className="search-wrap">
-            <FaSearch className="search-icon"/>
-            <input 
-              type="text" 
-              placeholder="İsim veya Numara ara..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          <div style={{fontSize:'12px', color:'#777'}}>Exam: {examTitle}</div>
         </div>
 
         <div className="student-list">
-          {filteredStudents.map(student => (
-            <div 
-              key={student.id} 
-              className={`student-item ${selectedStudent?.id === student.id ? 'active' : ''}`}
-              onClick={() => setSelectedStudent(student)}
-            >
-              <div className="s-avatar">
-                <img src={student.photoRef} alt="avatar" />
+          {violations.length === 0 ? (
+            <div style={{padding:'20px', textAlign:'center', color:'#888'}}>No violations detected yet.</div>
+          ) : (
+            violations.map(v => (
+              <div 
+                key={v.id} 
+                className={`student-item ${selectedViolation?.id === v.id ? 'active' : ''}`}
+                onClick={() => setSelectedViolation(v)}
+                style={{borderLeft: '4px solid #e74c3c'}}
+              >
+                <div className="s-info">
+                  <h4 style={{color:'#e74c3c'}}>{v.full_name}</h4>
+                  <small>{v.student_number} • {new Date(v.timestamp).toLocaleTimeString()}</small>
+                  <div style={{fontSize:'11px', marginTop:'5px', fontWeight:'bold'}}>{v.reason}</div>
+                </div>
               </div>
-              <div className="s-info">
-                <h4>{student.name}</h4>
-                <small>{student.id} - {student.seat}</small>
-              </div>
-              <div className="s-status">
-                {getStatusBadge(student.status)}
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
-      {/* SAĞ PANEL: DETAY VE İŞLEM */}
+      {/* ORTA PANEL: İSTATİSTİK & DETAY */}
       <div className="main-content">
-        {selectedStudent ? (
+        
+        {/* Üst İstatistikler */}
+        <div className="stats-header" style={{display:'flex', gap:'15px', marginBottom:'20px'}}>
+             <div className="stat-card">
+                <h3>{stats.total_students}</h3>
+                <span>Total Students</span>
+             </div>
+             <div className="stat-card" style={{borderColor:'#2ecc71', color:'#2ecc71'}}>
+                <h3>{stats.present_count}</h3>
+                <span>Present</span>
+             </div>
+             <div className="stat-card" style={{borderColor:'#e74c3c', color:'#e74c3c'}}>
+                <h3>{stats.violation_count}</h3>
+                <span>Violations</span>
+             </div>
+             <div className="stat-card">
+                <h3>%{stats.attendance_rate}</h3>
+                <span>Attendance</span>
+             </div>
+        </div>
+
+        {selectedViolation ? (
           <div className="verification-panel">
-            
             <header className="panel-header">
-              <h2><FaIdCard/> Kimlik Doğrulama</h2>
-              <div className="seat-info">
-                 <FaChair/> Sıra No: {selectedStudent.seat}
-              </div>
+              <h2 style={{color:'#c0392b'}}><FaExclamationTriangle/> Violation Details</h2>
             </header>
 
             <div className="comparison-area">
-              {/* Kayıtlı Foto */}
-              <div className="photo-card">
-                <span className="label">Sistem Kaydı</span>
-                <img src={selectedStudent.photoRef} alt="System Ref" />
-              </div>
-
-              {/* AI Skor */}
-              <div className="ai-score-box">
-                 <div className={`score-circle ${selectedStudent.matchScore < 70 ? 'low' : 'high'}`}>
-                    %{selectedStudent.matchScore}
-                 </div>
-                 <p>{selectedStudent.matchScore < 70 ? "Uyuşmazlık" : "Yüksek Eşleşme"}</p>
-              </div>
-
-              {/* Canlı Foto */}
-              <div className="photo-card">
-                <span className="label">Kapı Girişi (Canlı)</span>
-                {selectedStudent.photoLive ? (
-                   <img src={selectedStudent.photoLive} alt="Live Cam" />
-                ) : (
-                   <div className="no-photo">
-                      <FaUserClock size={30}/>
-                      <p>Giriş Yapmadı</p>
-                   </div>
-                )}
+              <div className="photo-card" style={{width: '100%'}}>
+                <span className="label">Captured Evidence</span>
+                {/* Resim yolu backend'den "assets/..." geldiği için başına base url gerekebilir ama localde direkt çalışır */}
+                <img src={selectedViolation.evidence_image} alt="Evidence" />
               </div>
             </div>
 
-            <div className="student-details-bar" style={{textAlign:'center', padding:'10px', color:'#555', borderBottom:'1px solid #eee'}}>
-                 <h3>{selectedStudent.name}</h3>
-                 <p>{selectedStudent.id}</p>
+            <div className="student-details-bar">
+                 <h3>{selectedViolation.full_name}</h3>
+                 <p>Reason: {selectedViolation.reason}</p>
+                 <button className="btn-reject" onClick={() => setSelectedViolation(null)}>Close Review</button>
             </div>
-
-            <div className="action-bar">
-              {selectedStudent.status === 'pending' || selectedStudent.status === 'violation' ? (
-                <>
-                  <button className="btn-approve" onClick={() => handleApprove(selectedStudent)}>
-                    <FaCheckCircle /> Onayla ve İçeri Al
-                  </button>
-                  <button className="btn-reject" onClick={() => handleReject(selectedStudent)}>
-                    <FaExclamationTriangle /> İhlal Bildir / Reddet
-                  </button>
-                </>
-              ) : selectedStudent.status === 'approved' ? (
-                <div style={{color:'#27ae60', fontWeight:'bold', fontSize:'18px', display:'flex', alignItems:'center', gap:'10px'}}>
-                    <FaUserCheck size={24}/> Öğrenci Sınav Salonunda
-                </div>
-              ) : (
-                <div style={{color:'#f39c12', fontWeight:'bold'}}>⏳ Öğrenci henüz kapıya gelmedi.</div>
-              )}
-            </div>
-
           </div>
         ) : (
-          <div className="empty-state">
-            <FaIdCard />
-            <h3>Kontrol etmek için listeden bir öğrenci seçiniz.</h3>
+          // Eğer ihlal seçili değilse CANLI AKIŞI göster
+          <div className="live-feed-panel">
+              <h3><FaSync/> Live Check-in Feed</h3>
+              <table className="feed-table">
+                  <thead>
+                      <tr>
+                          <th>Student</th>
+                          <th>Time</th>
+                          <th>Status</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {liveFeed.map((log, index) => (
+                          <tr key={index}>
+                              <td>{log.full_name}</td>
+                              <td>{new Date(log.time).toLocaleTimeString()}</td>
+                              <td>
+                                  {log.status === 'CLEAN' && <span className="badge success">Verified</span>}
+                                  {log.status === 'FACE_MISMATCH' && <span className="badge danger">Face Mismatch</span>}
+                                  {log.status === 'WRONG_SEAT' && <span className="badge warning">Wrong Seat</span>}
+                              </td>
+                          </tr>
+                      ))}
+                  </tbody>
+              </table>
           </div>
         )}
       </div>

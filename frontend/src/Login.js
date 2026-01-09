@@ -1,48 +1,48 @@
-import { api } from './services/api';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Login.css';
+import { api } from './services/api';
 import { 
-  FaUser, 
-  FaLock, 
-  FaShieldAlt, 
-  FaArrowRight, 
-  FaUniversity, 
-  FaIdCard, 
-  FaChalkboardTeacher 
+  FaUser, FaLock, FaShieldAlt, FaArrowRight, FaUniversity, 
+  FaIdCard, FaChalkboardTeacher, FaSpinner 
 } from 'react-icons/fa';
 
 const Login = () => {
-  // Varsayılan olarak 'student' seçili gelsin
-  // Test kolaylığı için başlangıç değerlerini dolu getiriyoruz
+  // Varsayılan olarak Öğrenci seçili ve bilgileri dolu gelsin
   const [role, setRole] = useState('student'); 
-  const [identifier, setIdentifier] = useState('220706010'); 
+  const [identifier, setIdentifier] = useState('220706011'); 
   const [password, setPassword] = useState('123');
+  
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Role göre input etiketini ve ikonunu değiştiren yapı
-const getInputConfig = () => {
+  // Rol butonlarına basınca bilgileri otomatik doldur
+  const handleRoleChange = (newRole) => {
+    setRole(newRole);
+    setError('');
+
+    if (newRole === 'student') {
+      setIdentifier('220706011');
+      setPassword('123');
+    } else if (newRole === 'admin') {
+      setIdentifier('admin_erdem');
+      setPassword('pass123');
+    } else if (newRole === 'proctor') {
+      setIdentifier('proctor_ali');
+      setPassword('pass123');
+    } else {
+      setIdentifier('');
+      setPassword('');
+    }
+  };
+
+  const getInputConfig = () => {
     switch(role) {
       case 'student':
-        return { 
-          label: 'Student Number', 
-          placeholder: 'Ex: 220706010', 
-          icon: <FaIdCard />, 
-          type: 'text' 
-        };
-      case 'admin': // Artık "Instructor" olarak geçecek
-        return { 
-          label: 'Username', 
-          placeholder: 'admin', 
-          icon: <FaUniversity />, 
-          type: 'text' 
-        };
+        return { label: 'Student Number', placeholder: '220706011', icon: <FaIdCard />, type: 'text' };
+      case 'admin':
+        return { label: 'Username', placeholder: 'admin_erdem', icon: <FaUniversity />, type: 'text' };
       case 'proctor':
-        return { 
-          label: 'Proctor Username', 
-          placeholder: 'proctor_01', 
-          icon: <FaChalkboardTeacher />, 
-          type: 'text' 
-        };
+        return { label: 'Proctor Username', placeholder: 'proctor_ali', icon: <FaChalkboardTeacher />, type: 'text' };
       default:
         return { label: 'Username', placeholder: '', icon: <FaUser />, type: 'text' };
     }
@@ -50,60 +50,30 @@ const getInputConfig = () => {
 
   const config = getInputConfig();
 
-  // Rol butonuna basınca inputu temizle veya test verisiyle doldur
-  const handleRoleChange = (newRole) => {
-    setRole(newRole);
-    setError('');
-    
-    // --- TEST İÇİN OTOMATİK DOLDURMA ---
-    if(newRole === 'student') {
-        setIdentifier('220706010'); setPassword('123');
-    } else if(newRole === 'admin') {
-        setIdentifier('emreolca@maltepe.edu.tr'); setPassword('123456');
-    } else if(newRole === 'proctor') {
-        setIdentifier('gozetmen_01'); setPassword('test123');
-    } else {
-        setIdentifier(''); setPassword('');
-    }
-  };
-
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
-    // --- MOCK (SAHTE) GİRİŞ KONTROLÜ ---
-    // Backend hazır olana kadar şifreleri burada kontrol ediyoruz.
-    let isSuccess = false;
+    try {
+      const response = await api.login(identifier, password);
 
-    if (role === 'student' && identifier === '220706010' && password === '123') {
-      isSuccess = true;
-    } 
-    else if (role === 'admin' && identifier === 'emreolca@maltepe.edu.tr' && password === '123456') {
-      isSuccess = true;
-    }
-    else if (role === 'proctor' && identifier === 'gozetmen_01' && password === 'test123') {
-      isSuccess = true;
-    }
+      if (response.success) {
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('userRole', role);
+        localStorage.setItem('userId', identifier);
 
-    if (isSuccess) {
-      console.log("Giriş Başarılı: ", role);
-      
-      // Giriş bilgilerini tarayıcı hafızasına kaydet
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userRole', role);
-      localStorage.setItem('userId', identifier);
-
-      // --- YÖNLENDİRME MANTIĞI ---
-      if (role === 'student') {
-        window.location.href = '/student/dashboard';    // Öğrenci Paneli
-      } else if (role === 'proctor') {
-        window.location.href = '/proctor/exams';        // Gözetmen Sınav Seçimi
-      } else if (role === 'admin') {
-        window.location.href = '/instructor/dashboard'; // Öğretmen (Oturma Planı) Paneli
+        if (role === 'student') window.location.href = '/student/dashboard';
+        else if (role === 'proctor') window.location.href = '/proctor/exams';
+        else if (role === 'admin') window.location.href = '/instructor/dashboard';
+      } else {
+        setError(response.message || 'Login failed. Please check credentials.');
       }
-      
-    } else {
-      setError('Hatalı bilgi! Lütfen belirlediğimiz test şifrelerini kullanın.');
+    } catch (err) {
+      console.error(err);
+      setError('Connection error. Is the backend server running?');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -112,37 +82,18 @@ const getInputConfig = () => {
       <div className="login-container">
         
         <div className="login-header">
-          <div className="icon-circle">
-            <FaShieldAlt />
-          </div>
+          <div className="icon-circle"><FaShieldAlt /></div>
           <h2>Exam Security System</h2>
-          <p>Lütfen giriş türünü seçiniz</p>
+          <p>Select login type (Auto-fill enabled)</p>
         </div>
 
-        {/* ROL SEÇİM BUTONLARI */}
         <div className="role-selector">
-          <button 
-            className={`role-btn ${role === 'student' ? 'active' : ''}`} 
-            onClick={() => handleRoleChange('student')}
-          >
-            Öğrenci
-          </button>
-          <button 
-            className={`role-btn ${role === 'admin' ? 'active' : ''}`} 
-            onClick={() => handleRoleChange('admin')}
-          >
-            Öğretmen
-          </button>
-          <button 
-            className={`role-btn ${role === 'proctor' ? 'active' : ''}`} 
-            onClick={() => handleRoleChange('proctor')}
-          >
-            Gözetmen
-          </button>
+          <button className={`role-btn ${role === 'student' ? 'active' : ''}`} onClick={() => handleRoleChange('student')}>Student</button>
+          <button className={`role-btn ${role === 'admin' ? 'active' : ''}`} onClick={() => handleRoleChange('admin')}>Instructor</button>
+          <button className={`role-btn ${role === 'proctor' ? 'active' : ''}`} onClick={() => handleRoleChange('proctor')}>Proctor</button>
         </div>
 
         <form className="login-form" onSubmit={handleLogin}>
-          
           {error && <div className="error-message">{error}</div>}
 
           <div className="input-group">
@@ -150,38 +101,29 @@ const getInputConfig = () => {
             <div className="input-field">
               <span className="icon">{config.icon}</span>
               <input 
-                type={config.type}
-                placeholder={config.placeholder}
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                required
+                type={config.type} 
+                value={identifier} 
+                onChange={(e) => setIdentifier(e.target.value)} 
+                required 
               />
             </div>
           </div>
 
           <div className="input-group">
-            <label>Şifre</label>
+            <label>Password</label>
             <div className="input-field">
               <span className="icon"><FaLock /></span>
               <input 
                 type="password" 
-                placeholder="••••••••" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                required 
               />
             </div>
           </div>
 
-          <div className="form-actions">
-            <label className="remember-me">
-                <input type="checkbox" /> Beni Hatırla
-            </label>
-            <a href="#!" className="forgot-password">Şifremi Unuttum?</a>
-          </div>
-
-          <button type="submit" className="btn-login">
-            Giriş Yap <FaArrowRight style={{ marginLeft: '8px' }} />
+          <button type="submit" className="btn-login" disabled={isLoading}>
+            {isLoading ? <><FaSpinner className="fa-spin"/> Logging in...</> : <>Login <FaArrowRight style={{marginLeft:'8px'}}/></>}
           </button>
         </form>
 

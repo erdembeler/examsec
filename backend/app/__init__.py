@@ -1,33 +1,18 @@
-from flask import Flask
-from flask_cors import CORS
 import os
 import psycopg2
+from flask import Flask
+from flask_cors import CORS
 from dotenv import load_dotenv
-
-def create_app():
-    app = Flask(__name__)
-    
-    # React (localhost:3000) ile Backend (localhost:5000) konuşabilsin diye izin veriyoruz
-    CORS(app) 
-    
-    # .env dosyasını yükle
-    load_dotenv()
-
-    # Route'ları (Adresleri) sisteme tanıtıyoruz
-    from .routes import main
-    app.register_blueprint(main)
-
-    return app
-
-# Basit bir veritabanı bağlantı fonksiyonu
-# backend/app/__init__.py içindeki get_db_connection fonksiyonunu bul ve bununla değiştir:
+from pathlib import Path
 
 def get_db_connection():
-    # Eğer sistemde DATABASE_URL varsa (Render/Neon ortamı) onu kullan
-    if os.environ.get('DATABASE_URL'):
-        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+    # 1. Cloud (Neon/Render) kontrolü
+    db_url = os.environ.get('DATABASE_URL')
+    
+    if db_url:
+        conn = psycopg2.connect(db_url)
     else:
-        # Yoksa lokal ayarlara bak (Senin Mac Mini ortamı)
+        # 2. Yerel ayarlar (Fallback)
         conn = psycopg2.connect(
             host=os.environ.get('DB_HOST'),
             database=os.environ.get('DB_NAME'),
@@ -36,3 +21,30 @@ def get_db_connection():
             port=os.environ.get('DB_PORT')
         )
     return conn
+
+def create_app():
+    app = Flask(__name__)
+    CORS(app) 
+
+    # --- KESİN ÇÖZÜM: .env DOSYASINI BUL ---
+    # Bu dosyanın (init.py) olduğu yerden 2 klasör yukarı çıkıp .env'i buluyoruz.
+    # backend/app/__init__.py  ->  backend/app/  ->  backend/  -> .env
+    env_path = Path(__file__).resolve().parent.parent / '.env'
+    load_dotenv(dotenv_path=env_path)
+    
+    # KONTROL: Terminale basar (Böylece okuyup okumadığını anlarız)
+    print("------------------------------------------------")
+    print(f"📡 .env Dosya Yolu: {env_path}")
+    print(f"🔑 Veritabanı URL Okundu mu?: {'EVET' if os.environ.get('DATABASE_URL') else 'HAYIR'}")
+    print("------------------------------------------------")
+
+    # Resim klasörü ayarı
+    upload_folder = os.path.join(os.getcwd(), 'assets')
+    if not os.path.exists(upload_folder):
+        os.makedirs(upload_folder)
+    app.config['UPLOAD_FOLDER'] = upload_folder
+
+    from .routes import main
+    app.register_blueprint(main)
+
+    return app

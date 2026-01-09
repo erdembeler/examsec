@@ -1,80 +1,131 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './InstructorDashboard.css';
+import { api } from './services/api';
 import { 
   FaChalkboardTeacher, FaRandom, FaExchangeAlt, FaSave, 
-  FaChartBar, FaFilePdf, FaCalendarAlt, FaUserEdit, 
-  FaSignOutAlt, FaEraser, FaUserGraduate, FaBookOpen 
+  FaChartBar, FaFilePdf, FaUserEdit, 
+  FaSignOutAlt, FaEraser, FaUserGraduate, FaBookOpen, FaSpinner, FaSync
 } from 'react-icons/fa';
 
-// TÜM ÖĞRENCİ LİSTESİ (Veritabanı gibi düşünelim)
-// 0706: Yazılım (Sarı), 0704: Bilgisayar (Mavi)
-const allStudentsDB = [
-  { id: "220706001", name: "Ali (Yazılım)", dept: "0706", status: "pending", violation: null },
-  { id: "220704001", name: "Veli (Bilgisayar)", dept: "0704", status: "pending", violation: null },
-  { id: "220706002", name: "Ayşe (Yazılım)", dept: "0706", status: "pending", violation: null },
-  { id: "220704002", name: "Fatma (Bilgisayar)", dept: "0704", status: "pending", violation: null },
-  { id: "220706003", name: "Mehmet (Yazılım)", dept: "0706", status: "pending", violation: null },
-  { id: "220704003", name: "Zeynep (Bilgisayar)", dept: "0704", status: "pending", violation: null },
-  { id: "220706004", name: "Can (Yazılım)", dept: "0706", status: "pending", violation: null },
-  { id: "220704004", name: "Elif (Bilgisayar)", dept: "0704", status: "pending", violation: null },
-  { id: "220706005", name: "Burak (Yazılım)", dept: "0706", status: "pending", violation: null },
-  { id: "220704005", name: "Selin (Bilgisayar)", dept: "0704", status: "pending", violation: null },
-  { id: "220706006", name: "Oğuz (Yazılım)", dept: "0706", status: "pending", violation: null },
-  { id: "220704006", name: "Merve (Bilgisayar)", dept: "0704", status: "pending", violation: null },
-];
-
-// DERSLER VE KURALLARI
-const courses = [
-    { 
-        id: 'soft-val', 
-        name: 'Software Validation & Testing', 
-        allowedDepts: ['0706'] // Sadece Yazılım
-    },
-    { 
-        id: 'algo', 
-        name: 'Algorithms Design & Analysis', 
-        allowedDepts: ['0706', '0704'] // Ortak Ders
-    }
-];
-
 const InstructorDashboard = () => {
-  // State Tanımları
-  const [selectedCourse, setSelectedCourse] = useState(""); // Seçilen Ders
-  const [students, setStudents] = useState([]); // O anki dersin öğrencileri
-  const [seatingPlan, setSeatingPlan] = useState([]);
+  // --- STATE TANIMLARI ---
+  const [exams, setExams] = useState([]);           
+  const [selectedExamId, setSelectedExamId] = useState(""); 
+  const [studentsInClass, setStudentsInClass] = useState([]); 
+
+  const [seatingPlan, setSeatingPlan] = useState([]); 
+  const [loading, setLoading] = useState(false);      
   
-  const [examDate, setExamDate] = useState("");
-  const [examTime, setExamTime] = useState("");
+  // Sınav Durumu
   const [isExamStarted, setIsExamStarted] = useState(false);
   const [isExamFinished, setIsExamFinished] = useState(false);
   const [selectedStudentForManual, setSelectedStudentForManual] = useState(null);
+  
+  // Polling (Sürekli Kontrol) için referans
+  const pollingRef = useRef(null);
 
   const rows = 3; 
   const cols = 4;
 
-  // Sayfa açıldığında boş plan oluştur
+  // 1. SAYFA AÇILINCA: Sınav Listesini Çek
   useEffect(() => {
+    const fetchExams = async () => {
+      try {
+        setLoading(true);
+        const data = await api.getExams();
+        setExams(data);
+      } catch (error) {
+        console.error("Failed to fetch exams:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchExams();
     resetSeatingPlan();
+    
+    // Sayfadan çıkarsa polling'i durdur
+    return () => stopPolling();
   }, []);
 
-  // Ders Seçimi Değiştiğinde Çalışır
-  const handleCourseChange = (e) => {
-    const courseId = e.target.value;
-    setSelectedCourse(courseId);
+  // 2. POLLING MEKANİZMASI (CANLI TAKİP)
+  // Sınav başladığında devreye girer, 3 saniyede bir verileri günceller.
+  useEffect(() => {
+    if (isExamStarted && selectedExamId) {
+      startPolling();
+    } else {
+      stopPolling();
+    }
+  }, [isExamStarted, selectedExamId]);
+
+  const startPolling = () => {
+    // Eğer zaten çalışıyorsa tekrar başlatma
+    if (pollingRef.current) return;
+
+    console.log("📡 Canlı takip başlatıldı...");
+    pollingRef.current = setInterval(async () => {
+      try {
+        // Veritabanından en güncel durumları çek
+        const freshStudents = await api.getExamStudents(selectedExamId);
+        
+        // Oturma planındaki öğrencilerin durumunu güncelle
+        setSeatingPlan(prevPlan => {
+            return prevPlan.map(seat => {
+                // Koltuk boşsa elleme
+                if (!seat.student) return seat;
+
+                // Koltuktaki öğrenciyi gelen taze listede bul
+                const freshData = freshStudents.find(s => s.id === seat.student.id);
+                
+                // Eğer veri varsa ve durumu değişmişse güncelle
+                if (freshData && freshData.status !== seat.student.status) {
+                    return {
+                        ...seat,
+                        student: {
+                            ...seat.student,
+                            status: freshData.status // 'present', 'pending' vb.
+                        }
+                    };
+                }
+                return seat;
+            });
+        });
+
+      } catch (error) {
+        console.error("Polling hatası:", error);
+      }
+    }, 3000); // 3 Saniyede bir kontrol et
+  };
+
+  const stopPolling = () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+      console.log("🔕 Canlı takip durduruldu.");
+    }
+  };
+
+  // 3. SINAV SEÇİLİNCE
+  const handleExamChange = async (e) => {
+    const examId = e.target.value;
+    setSelectedExamId(examId);
     
-    if (courseId === "") {
-        setStudents([]); // Ders seçilmediyse liste boş
+    if (examId === "") {
+        setStudentsInClass([]); 
         resetSeatingPlan();
         return;
     }
 
-    const course = courses.find(c => c.id === courseId);
-    
-    // Veritabanından (allStudentsDB) sadece o dersi alan bölümleri filtrele
-    const filteredStudents = allStudentsDB.filter(s => course.allowedDepts.includes(s.dept));
-    
-    setStudents(filteredStudents);
-    resetSeatingPlan(); // Öğrenciler değiştiği için planı sıfırla
+    try {
+        setLoading(true);
+        const students = await api.getExamStudents(examId);
+        setStudentsInClass(students);
+        resetSeatingPlan(); 
+    } catch (err) {
+        console.error("Failed to fetch student list:", err);
+    } finally {
+        setLoading(false);
+    }
   };
 
   const resetSeatingPlan = () => {
@@ -89,29 +140,20 @@ const InstructorDashboard = () => {
       }
     }
     setSeatingPlan(plan);
-    // Seçim sıfırlanınca student state'i handleCourseChange içinde ayarlandığı için burayı ellemiyoruz
   };
 
-  // --- ALGORİTMALAR (Mevcut student listesine göre çalışır) ---
+  // --- ALGORİTMALAR ---
   const handleRandomize = () => {
-    if (students.length === 0) return alert("Lütfen önce bir ders seçin!");
-    const shuffled = [...students].sort(() => 0.5 - Math.random());
+    if (studentsInClass.length === 0) return alert("Please select an exam first!");
+    const shuffled = [...studentsInClass].sort(() => 0.5 - Math.random());
     fillPlan(shuffled);
   };
 
   const handleButterfly = () => {
-    if (students.length === 0) return alert("Lütfen önce bir ders seçin!");
+    if (studentsInClass.length === 0) return alert("Please select an exam first!");
+    const software = studentsInClass.filter(s => s.dept === '0706');
+    const computer = studentsInClass.filter(s => s.dept === '0704');
     
-    const software = students.filter(s => s.dept === '0706');
-    const computer = students.filter(s => s.dept === '0704');
-    
-    // Eğer sadece tek bölüm varsa (Örn: Software Validation) uyarı ver veya düz yerleştir
-    if (computer.length === 0) {
-        alert("Bu derste sadece tek bölüm olduğu için Kelebek Sistemi yerine rastgele dağıtılıyor.");
-        handleRandomize();
-        return;
-    }
-
     let butterflyList = [];
     const maxLen = Math.max(software.length, computer.length);
     for (let i = 0; i < maxLen; i++) {
@@ -138,7 +180,7 @@ const InstructorDashboard = () => {
   };
 
   const handleSeatClick = (seatId) => {
-    if (isExamStarted) return alert("Sınav başladı, değişiklik yapılamaz!");
+    if (isExamStarted) return alert("Exam started, cannot modify seats!");
     
     if (selectedStudentForManual) {
         setSeatingPlan(prev => prev.map(seat => {
@@ -158,26 +200,12 @@ const InstructorDashboard = () => {
     }
   };
 
+  // SINAVI BAŞLAT (ARTIK RANDOM YOK!)
   const handleStartExam = () => {
-    if (!selectedCourse) return alert("Lütfen bir ders seçiniz.");
-    if (!examDate || !examTime) return alert("Lütfen tarih ve saat giriniz.");
+    if (!selectedExamId) return alert("Please select an exam.");
     setIsExamStarted(true);
-    alert("Sınav Simülasyonu Başlatıldı.");
-
-    const interval = setInterval(() => {
-        setSeatingPlan(prevPlan => {
-            return prevPlan.map(seat => {
-                if (seat.student && seat.student.status === 'pending') {
-                    if (Math.random() > 0.7) {
-                        const newStatus = Math.random() > 0.1 ? 'present' : 'absent';
-                        return { ...seat, student: { ...seat.student, status: newStatus } };
-                    }
-                }
-                return seat;
-            });
-        });
-    }, 2000);
-    setTimeout(() => clearInterval(interval), 15000);
+    // Burada setInterval YOK. useEffect'teki startPolling devreye girecek.
+    alert("Exam Monitoring Started. Waiting for live updates from students...");
   };
 
   const getStats = () => {
@@ -194,151 +222,152 @@ const InstructorDashboard = () => {
   };
   const stats = getStats();
 
-  // --- RENDER: RAPOR ---
+  // --- RENDER ---
   if (isExamFinished) {
+    const examInfo = exams.find(e => String(e.id) === selectedExamId);
     return (
         <div className="report-wrapper">
             <div className="report-container">
                 <header className="report-header">
-                    <h2>🏁 Sınav Sonuç Raporu</h2>
+                    <h2>🏁 Exam Result Report</h2>
                     <div style={{fontSize:'14px', color:'#555'}}>
-                        <strong>Ders:</strong> {courses.find(c=>c.id===selectedCourse)?.name}
+                        <strong>Exam:</strong> {examInfo?.title || "Unknown"}
                     </div>
-                    <button className="btn-print" onClick={() => window.print()}><FaFilePdf/> PDF Kaydet</button>
+                    <button className="btn-print" onClick={() => window.print()}><FaFilePdf/> Save PDF</button>
                 </header>
                 <div className="stats-grid">
-                    <div className="stat-box blue">Kayıtlı: {stats.total}</div>
-                    <div className="stat-box green">Katılan: {stats.present}</div>
-                    <div className="stat-box gray">Gelmeyen: {stats.absent}</div>
-                    <div className="stat-box red">İhlal: {stats.violations}</div>
+                    <div className="stat-box blue">Enrolled: {stats.total}</div>
+                    <div className="stat-box green">Present: {stats.present}</div>
+                    <div className="stat-box gray">Absent: {stats.absent}</div>
+                    <div className="stat-box red">Violations: {stats.violations}</div>
                 </div>
-                <h3>📋 Oturma Düzeni ve Durumlar</h3>
+                <h3>📋 Seating & Attendance Log</h3>
                 <table className="report-table">
-                    <thead><tr><th>Sıra</th><th>Öğrenci</th><th>Bölüm</th><th>Durum</th></tr></thead>
+                    <thead><tr><th>Seat</th><th>Student</th><th>Dept</th><th>Status</th></tr></thead>
                     <tbody>
                         {seatingPlan.filter(s => s.student).map(seat => (
                             <tr key={seat.id} className={seat.student.violation ? 'row-violation' : ''}>
                                 <td>{seat.seatLabel}</td>
                                 <td>{seat.student.name}</td>
-                                <td>{seat.student.dept === '0706' ? 'Yazılım' : 'Bilgisayar'}</td>
-                                <td>{seat.student.violation || (seat.student.status === 'present' ? '✅ Katıldı' : '❌ Gelmedi')}</td>
+                                <td>{seat.student.dept === '0706' ? 'Software' : 'Computer'}</td>
+                                <td>{seat.student.violation || (seat.student.status === 'present' ? '✅ Present' : '❌ Absent')}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-                <button className="btn-start" style={{marginTop:'20px'}} onClick={() => setIsExamFinished(false)}>Geri Dön</button>
+                <button className="btn-start" style={{marginTop:'20px'}} onClick={() => setIsExamFinished(false)}>Go Back</button>
             </div>
         </div>
     );
   }
 
-  // --- RENDER: DASHBOARD ---
   return (
     <div className="inst-wrapper">
       <header className="inst-header">
         <div className="header-left">
             <div className="icon-box"><FaChalkboardTeacher /></div>
             <div>
-                <h2>Öğretmen Paneli</h2>
-                <p>Hoşgeldin, Dr. Emre Olca</p>
+                <h2>Instructor Dashboard</h2>
+                <p>Exam Configuration Panel</p>
             </div>
         </div>
         <div className="header-right">
             {!isExamStarted ? (
-                <button className="btn-start" onClick={handleStartExam}><FaSave /> Sınavı Başlat</button>
+                <button className="btn-start" onClick={handleStartExam}><FaSave /> Start Exam Monitor</button>
             ) : (
-                <button className="btn-finish" onClick={() => {if(window.confirm("Sınavı bitir?")) setIsExamFinished(true)}}>
-                    <FaChartBar /> Sınavı Bitir
-                </button>
+                <div style={{display:'flex', gap:'10px', alignItems:'center'}}>
+                    <span style={{color:'#2ecc71', fontWeight:'bold', fontSize:'14px', display:'flex', alignItems:'center', gap:'5px'}}>
+                        <FaSync className="fa-spin"/> Live
+                    </span>
+                    <button className="btn-finish" onClick={() => {if(window.confirm("Finish exam session?")) setIsExamFinished(true)}}>
+                        <FaChartBar /> Finish Exam
+                    </button>
+                </div>
             )}
             <button className="btn-logout-header" onClick={() => window.location.href='/'}>
-                <FaSignOutAlt /> Çıkış
+                <FaSignOutAlt /> Logout
             </button>
         </div>
       </header>
 
       <div className="inst-content">
         
-        {/* SOL PANEL */}
+        {/* AYARLAR */}
         <div className="panel settings-panel">
-            
-            {/* DERS SEÇİMİ (YENİ EKLENDİ) */}
             <div className="form-group highlight-box" style={{background:'#f0f4ff', padding:'15px', borderRadius:'8px', border:'1px solid #d0e0ff'}}>
-                <label style={{color:'#0056b3'}}><FaBookOpen/> Aktif Ders Seçimi</label>
-                <select 
-                    value={selectedCourse} 
-                    onChange={handleCourseChange}
-                    disabled={isExamStarted}
-                    style={{width:'100%', padding:'10px', borderRadius:'6px', border:'1px solid #0056b3', fontWeight:'bold'}}
-                >
-                    <option value="">-- Lütfen Ders Seçiniz --</option>
-                    {courses.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                </select>
-            </div>
-
-            <div className="form-group">
-                <label><FaCalendarAlt/> Tarih & Saat</label>
-                <div style={{display:'flex', gap:'10px'}}>
-                    <input type="date" value={examDate} onChange={(e)=>setExamDate(e.target.value)} disabled={isExamStarted}/>
-                    <input type="time" value={examTime} onChange={(e)=>setExamTime(e.target.value)} disabled={isExamStarted}/>
-                </div>
+                <label style={{color:'#0056b3'}}><FaBookOpen/> Select Active Exam</label>
+                {loading ? (
+                    <div style={{color:'#666'}}><FaSpinner className="fa-spin"/> Loading data...</div>
+                ) : (
+                    <select 
+                        value={selectedExamId} 
+                        onChange={handleExamChange}
+                        disabled={isExamStarted}
+                        style={{width:'100%', padding:'10px', borderRadius:'6px', border:'1px solid #0056b3', fontWeight:'bold'}}
+                    >
+                        <option value="">-- Choose an Exam --</option>
+                        {Array.isArray(exams) && exams.map(exam => (
+                            <option key={exam.id} value={exam.id}>{exam.title} ({exam.room_code})</option>
+                        ))}
+                    </select>
+                )}
             </div>
 
             <hr style={{border:'0', borderTop:'1px solid #eee', width:'100%', margin:'10px 0'}}/>
-            
-            <h4 style={{margin:'0 0 10px 0', color:'#2c3e50'}}><FaUserEdit/> Yerleştirme</h4>
+            <h4 style={{margin:'0 0 10px 0', color:'#2c3e50'}}><FaUserEdit/> Auto-Seating</h4>
             <div className="distribution-buttons">
-                <button onClick={handleRandomize} disabled={isExamStarted || !selectedCourse} className="btn-action random"><FaRandom /> Rastgele Dağıt</button>
-                <button onClick={handleButterfly} disabled={isExamStarted || !selectedCourse} className="btn-action butterfly"><FaExchangeAlt /> Kelebek (Sarı/Mavi)</button>
-                <button onClick={resetSeatingPlan} disabled={isExamStarted} className="btn-action reset"><FaEraser /> Temizle</button>
+                <button onClick={handleRandomize} disabled={isExamStarted || !selectedExamId} className="btn-action random"><FaRandom /> Randomize</button>
+                <button onClick={handleButterfly} disabled={isExamStarted || !selectedExamId} className="btn-action butterfly"><FaExchangeAlt /> Butterfly</button>
+                <button onClick={resetSeatingPlan} disabled={isExamStarted} className="btn-action reset"><FaEraser /> Clear</button>
             </div>
 
             <div className="student-pool-container">
                 <h4>
-                    Öğrenci Listesi ({students.length})
-                    {selectedCourse === 'soft-val' && <span style={{fontSize:'11px', color:'#e67e22', marginLeft:'5px'}}>(Sadece Yazılım)</span>}
-                    {selectedCourse === 'algo' && <span style={{fontSize:'11px', color:'#2980b9', marginLeft:'5px'}}>(Ortak)</span>}
+                    Student Database ({studentsInClass.length})
+                    <span style={{fontSize:'10px', fontWeight:'normal', color:'#888', marginLeft:'5px'}}>(From Backend)</span>
                 </h4>
-                
-                {selectedCourse ? (
+                {selectedExamId ? (
                     <div className="student-pool">
-                        {students.map(student => {
-                            const isSeated = seatingPlan.some(seat => seat.student && seat.student.id === student.id);
-                            return (
-                                <div 
-                                    key={student.id} 
-                                    className={`pool-item ${student.dept === '0706' ? 'yellow-border' : 'blue-border'} ${selectedStudentForManual?.id === student.id ? 'selected' : ''} ${isSeated ? 'seated-disabled' : ''}`}
-                                    onClick={() => !isSeated && !isExamStarted && setSelectedStudentForManual(student)}
-                                >
-                                    <div>
-                                        <div style={{fontWeight:'bold', fontSize:'13px'}}>{student.name}</div>
-                                        <div style={{fontSize:'11px', color:'#777'}}>{student.dept === '0706' ? 'Yazılım Müh.' : 'Bilgisayar Müh.'}</div>
+                        {studentsInClass.length === 0 ? (
+                           <div style={{color:'#999', fontSize:'12px', fontStyle:'italic'}}>
+                                No students enrolled.
+                           </div>
+                        ) : (
+                            studentsInClass.map(student => {
+                                const isSeated = seatingPlan.some(seat => seat.student && seat.student.id === student.id);
+                                return (
+                                    <div 
+                                        key={student.id} 
+                                        className={`pool-item ${student.dept === '0706' ? 'yellow-border' : 'blue-border'} ${selectedStudentForManual?.id === student.id ? 'selected' : ''} ${isSeated ? 'seated-disabled' : ''}`}
+                                        onClick={() => !isSeated && !isExamStarted && setSelectedStudentForManual(student)}
+                                    >
+                                        <div>
+                                            <div style={{fontWeight:'bold', fontSize:'13px'}}>{student.name}</div>
+                                            <div style={{fontSize:'11px', color:'#777'}}>{student.dept === '0706' ? 'Software' : 'Computer'}</div>
+                                        </div>
+                                        <div className={`dot ${student.dept === '0706' ? 'yellow' : 'blue'}`}></div>
                                     </div>
-                                    <div className={`dot ${student.dept === '0706' ? 'yellow' : 'blue'}`}></div>
-                                </div>
-                            )
-                        })}
+                                )
+                            })
+                        )}
                     </div>
                 ) : (
                     <div style={{padding:'20px', textAlign:'center', color:'#999', fontStyle:'italic'}}>
-                        Listeyi görmek için yukarıdan ders seçiniz.
+                        Please select an exam to load students.
                     </div>
                 )}
             </div>
         </div>
 
-        {/* SAĞ PANEL */}
+        {/* SINIF PLANI */}
         <div className="panel classroom-panel">
             <div className="classroom-header">
-                <h3>Sınıf Oturma Planı (Öğretmen Masası)</h3>
+                <h3>Classroom Seating Plan</h3>
                 <div style={{display:'flex', gap:'15px', fontSize:'13px'}}>
-                    <div style={{display:'flex', alignItems:'center', gap:'5px'}}><span className="dot yellow"></span> Yazılım</div>
-                    <div style={{display:'flex', alignItems:'center', gap:'5px'}}><span className="dot blue"></span> Bilgisayar</div>
+                    <div style={{display:'flex', alignItems:'center', gap:'5px'}}><span className="dot yellow"></span> Software</div>
+                    <div style={{display:'flex', alignItems:'center', gap:'5px'}}><span className="dot blue"></span> Computer</div>
                 </div>
             </div>
-
             <div className="classroom-grid" style={{gridTemplateColumns: `repeat(${cols}, 1fr)`}}>
                 {seatingPlan.map((seat) => {
                     let deptClass = "";
@@ -365,12 +394,12 @@ const InstructorDashboard = () => {
                                     <span className="s-id">{seat.student.id}</span>
                                     {isExamStarted && (
                                         <div className="live-badge">
-                                            {seat.student.status === 'present' ? '✅ Sınavda' : seat.student.status === 'absent' ? '❌ Yok' : '⏳ Bekliyor'}
+                                            {seat.student.status === 'present' ? '✅' : seat.student.status === 'absent' ? '❌' : '⏳'}
                                         </div>
                                     )}
                                 </div>
                             ) : (
-                                <span className="empty-label">BOŞ</span>
+                                <span className="empty-label">EMPTY</span>
                             )}
                         </div>
                     );
