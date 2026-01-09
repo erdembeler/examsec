@@ -1,0 +1,352 @@
+/* ProctorDashboard.css - Premium Tasarım */
+
+/* --- Ana İskelet --- */
+.dashboard-layout {
+    display: flex;
+    height: 100vh;
+    background-color: #f0f2f5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden; /* Sayfa kaymasını engeller, sadece paneller kayar */
+}
+
+/* --- SOL PANEL (Liste) --- */
+.sidebar-list {
+    width: 380px;
+    background: white;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    z-index: 2;
+}
+
+.sidebar-header {
+    padding: 20px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.header-top h3 { margin: 0; color: #2c3e50; font-size: 18px; }
+
+.search-wrap {
+    position: relative;
+}
+.search-wrap input {
+    width: 100%;
+    padding: 12px 15px 12px 40px;
+    border: 1px solid #dfe6e9;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    transition: all 0.3s;
+}
+.search-wrap input:focus { background: white; border-color: #3498db; outline: none; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #95a5a6; }
+
+.student-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+/* Liste Elemanları */
+.student-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.student-item:hover { background-color: #f1f8ff; }
+.student-item.active { background-color: #e3f2fd; border-color: #2196f3; box-shadow: 0 2px 5px rgba(33, 150, 243, 0.2); }
+
+.s-avatar img {
+    width: 45px; height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.s-info { flex: 1; }
+.s-info h4 { margin: 0; font-size: 14px; color: #34495e; }
+.s-info small { color: #7f8c8d; font-size: 12px; }
+
+/* Liste Rozetleri */
+.badge { font-size: 10px; padding: 4px 8px; border-radius: 12px; font-weight: bold; text-transform: uppercase; }
+.badge.success { background: #d4edda; color: #155724; }
+.badge.warning { background: #fff3cd; color: #856404; }
+.badge.danger { background: #f8d7da; color: #721c24; }
+.badge.secondary { background: #e2e3e5; color: #383d41; }
+
+/* --- SAĞ PANEL (İşlem Masası) --- */
+.main-content {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.verification-panel {
+    background: white;
+    width: 100%; max-width: 800px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    overflow: hidden;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Panel Başlığı */
+.panel-header {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.panel-header h2 { margin: 0; font-size: 20px; display: flex; align-items: center; gap: 10px; }
+.seat-info {
+    background: rgba(255,255,255,0.2);
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    display: flex; align-items: center; gap: 8px;
+}
+
+/* Fotoğraf Alanı */
+.comparison-area {
+    padding: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    background: #fafafa;
+}
+
+.photo-card {
+    text-align: center;
+    position: relative;
+}
+.photo-card .label {
+    display: block; margin-bottom: 10px; font-weight: 600; color: #555; font-size: 14px;
+}
+.photo-card img, .no-photo {
+    width: 220px; height: 220px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 4px solid white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.no-photo {
+    background: #dfe6e9; color: #b2bec3;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    font-size: 14px;
+}
+
+/* Eşleşme Skoru (Ortadaki Yuvarlak) */
+.ai-score-box {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.score-circle {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: white;
+    border: 6px solid #dfe6e9;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    font-weight: 800; font-size: 22px;
+    margin-bottom: 10px;
+}
+.score-circle.high { border-color: #2ecc71; color: #27ae60; }
+.score-circle.low { border-color: #e74c3c; color: #c0392b; }
+.ai-score-box p { font-size: 13px; font-weight: bold; color: #555; margin: 0; }
+
+/* Aksiyon Butonları */
+.action-bar {
+    padding: 25px 30px;
+    background: white;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.btn-approve, .btn-reject {
+    padding: 12px 30px;
+    border: none; border-radius: 8px;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    transition: transform 0.2s;
+}
+.btn-approve { background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; }
+.btn-approve:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4); }
+
+.btn-reject { background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); color: white; }
+.btn-reject:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(192, 57, 43, 0.4); }
+
+/* Boş Durum */
+.empty-state {
+    text-align: center; color: #95a5a6; margin-top: 100px;
+}
+.empty-state svg { font-size: 60px; margin-bottom: 20px; color: #cbd5e0; }
+
+.btn-logout-small {
+    background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;
+}
+
+/* --- ProctorExams.js (Gözetmen Sınav Listesi) Modern Stiller --- */
+
+.pe-wrapper {
+    background-color: #f4f6f9; /* Kurumsal açık mavi-gri arka plan */
+    min-height: 100vh;
+    padding: 40px 20px;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    justify-content: center;
+}
+
+.pe-container {
+    width: 100%;
+    max-width: 1200px;
+}
+
+/* Header */
+.pe-header {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+    margin-bottom: 40px;
+    border-left: 6px solid #4834d4; /* Sol tarafta mor vurgu */
+}
+
+.pe-header-left { display: flex; align-items: center; gap: 20px; }
+.pe-header-left h2 { margin: 0; color: #2d3436; font-size: 24px; }
+.pe-header-left p { margin: 0; color: #636e72; font-size: 14px; margin-top: 4px; }
+
+.pe-icon-box {
+    width: 55px; height: 55px;
+    background: linear-gradient(135deg, #4834d4 0%, #686de0 100%);
+    color: white; border-radius: 12px;
+    display: flex; justify-content: center; align-items: center; font-size: 26px;
+    box-shadow: 0 4px 10px rgba(72, 52, 212, 0.3);
+}
+
+.section-title {
+    color: #2d3436; font-size: 18px; margin-bottom: 20px; padding-left: 10px; border-left: 3px solid #00cec9;
+}
+
+/* Grid Yapısı */
+.pe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 30px;
+}
+
+/* KART TASARIMI */
+.pe-card {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border: 1px solid transparent;
+    display: flex; flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.pe-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.pe-card.card-active {
+    border: 2px solid #00cec9; /* Aktif kartta turkuaz çerçeve */
+}
+.pe-card.card-active::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px;
+    background: linear-gradient(90deg, #00cec9, #0984e3);
+}
+
+/* Kart İçeriği */
+.card-top {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+}
+.status-pill {
+    padding: 6px 14px; border-radius: 30px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.pill-green { background: #e0f9f4; color: #00b894; }
+.pill-blue { background: #e3f2fd; color: #0984e3; }
+.pill-gray { background: #dfe6e9; color: #636e72; }
+
+.course-code { font-weight: bold; color: #b2bec3; font-size: 13px; }
+
+.card-title {
+    margin: 0 0 20px 0; color: #2d3436; font-size: 20px; line-height: 1.4; height: 56px; /* 2 satır sabit */ display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Meta Data (Grid) */
+.meta-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;
+}
+.meta-item {
+    display: flex; align-items: center; gap: 8px; font-size: 13px; color: #636e72; background: #f8f9fa; padding: 8px; border-radius: 8px;
+}
+.m-icon { color: #6c5ce7; }
+
+/* Footer */
+.card-footer {
+    margin-top: auto; padding-top: 20px; border-top: 1px solid #f1f2f6;
+    display: flex; justify-content: space-between; align-items: center;
+}
+
+.location-info {
+    display: flex; align-items: center; gap: 8px; color: #2d3436; font-weight: 600; font-size: 14px;
+}
+.loc-icon { color: #e17055; }
+
+/* Buton */
+.btn-action-card {
+    padding: 10px 20px; border: none; border-radius: 12px;
+    font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px;
+    transition: all 0.2s;
+}
+.btn-pulse {
+    background: linear-gradient(135deg, #00cec9 0%, #0984e3 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(9, 132, 227, 0.3);
+}
+.btn-pulse:hover {
+    box-shadow: 0 6px 20px rgba(9, 132, 227, 0.5); transform: scale(1.05);
+}
+.pe-card:not(.card-active) .btn-action-card {
+    background: #dfe6e9; color: #b2bec3; cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pe-grid { grid-template-columns: 1fr; }
+    .pe-header { flex-direction: column; text-align: center; gap: 15px; }
+    .pe-header-left { flex-direction: column; }
+}

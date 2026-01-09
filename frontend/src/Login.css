@@ -1,0 +1,207 @@
+/* Login.css */
+.login-wrapper {
+    background: linear-gradient(135deg, #0061f2 0%, #6900c7 100%);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  
+  .login-container {
+    background-color: #ffffff;
+    width: 380px;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    text-align: center;
+  }
+  
+  .login-header {
+    margin-bottom: 30px;
+  }
+  
+  .icon-circle {
+    width: 60px;
+    height: 60px;
+    background-color: #e1f0ff;
+    color: #0061f2;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    margin: 0 auto 15px;
+  }
+  
+  .login-header h2 {
+    margin: 0;
+    color: #333;
+    font-size: 22px;
+  }
+  
+  .login-header p {
+    margin: 5px 0 0;
+    color: #777;
+    font-size: 14px;
+  }
+  
+  .input-group {
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  
+  .input-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #555;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  
+  .input-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .input-field .icon {
+    position: absolute;
+    left: 15px;
+    color: #aaa;
+    display: flex;
+  }
+  
+  .input-field input {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border 0.3s;
+  }
+  
+  .input-field input:focus {
+    border-color: #0061f2;
+    box-shadow: 0 0 0 3px rgba(0, 97, 242, 0.1);
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 25px;
+  }
+  
+  .forgot-password {
+    color: #0061f2;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  .btn-login {
+    width: 100%;
+    padding: 12px;
+    background-color: #0061f2;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.3s;
+  }
+  
+  .btn-login:hover {
+    background-color: #0050c8;
+  }
+  
+  .error-message {
+    background-color: #fde8e8;
+    color: #c81e1e;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-bottom: 15px;
+  }
+  
+  .login-footer {
+    margin-top: 25px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    font-size: 12px;
+    color: #999;
+  }
+
+
+  /* Login.css */
+
+/* ... Önceki CSS kodlarının çoğu aynı kalabilir ... */
+
+/* YENİ EKLENEN KISIM: Rol Seçici */
+.role-selector {
+    display: flex;
+    justify-content: space-between;
+    background-color: #f0f2f5;
+    padding: 5px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+}
+
+.role-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.role-btn.active {
+    background-color: #ffffff;
+    color: #0061f2;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.role-btn:hover:not(.active) {
+    background-color: #e4e6eb;
+}
+
+/* Diğer mevcut stiller (wrapper, input-field vb.) aynen kalmalı */
+.login-wrapper {
+    background: linear-gradient(135deg, #0061f2 0%, #6900c7 100%);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Segoe UI', sans-serif;
+}
+  
+.login-container {
+    background-color: #ffffff;
+    width: 400px; /* Biraz genişlettik */
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+/* ... Geri kalan input, button stilleri önceki cevaptaki gibi ... */
+.input-group { margin-bottom: 20px; text-align: left; }
+.input-group label { display: block; margin-bottom: 8px; color: #555; font-weight: 600; font-size: 14px; }
+.input-field { position: relative; display: flex; align-items: center; }
+.input-field .icon { position: absolute; left: 15px; color: #aaa; display: flex; }
+.input-field input { width: 100%; padding: 12px 12px 12px 40px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; transition: border 0.3s; }
+.input-field input:focus { border-color: #0061f2; box-shadow: 0 0 0 3px rgba(0, 97, 242, 0.1); }
+.btn-login { width: 100%; padding: 12px; background-color: #0061f2; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background 0.3s; margin-top: 10px;}
+.btn-login:hover { background-color: #0050c8; }
+.error-message { background-color: #fde8e8; color: #c81e1e; padding: 10px; border-radius: 6px; font-size: 14px; margin-bottom: 15px; }
+.login-footer { margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px; font-size: 12px; color: #999; }
+.icon-circle { width: 60px; height: 60px; background-color: #e1f0ff; color: #0061f2; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; margin: 0 auto 15px; }
