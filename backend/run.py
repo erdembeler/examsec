@@ -1,7 +1,9 @@
 # backend/run.py
 import os
 from app import create_app
-
+import sys
+print(f"PYTHON VERSION: {sys.version}")
+print(f"CURRENT PATH: {os.getcwd()}")
 # Gunicorn'un bulması gereken nesne tam olarak bu 'app' değişkenidir.
 app = create_app()
 
