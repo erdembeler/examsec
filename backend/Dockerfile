@@ -1,37 +1,32 @@
-# backend/Dockerfile
 FROM python:3.10-slim
 
+# Çalışma dizini
 WORKDIR /app
 
-# Sistem kütüphanelerini en baştan sağlam kuralım
+# Sistem bağımlılıkları
 RUN apt-get update && apt-get install -y \
-    libgl1 \
-    libglib2.0-0 \
-    libjpeg-dev \
-    zlib1g-dev \
+    build-essential \
+    cmake \
     libopenblas-dev \
     liblapack-dev \
-    build-essential \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Dosyaları kopyala
-COPY . .
-
-# pip güncelle
+# Pip güncelle
 RUN pip install --upgrade pip setuptools wheel
 
-# --- KRİTİK SIRALAMA ---
-# 1. dlib-bin (Hazır derlenmiş)
+# dlib-bin ve face-recognition kurulumu
 RUN pip install dlib-bin
-
-# 2. face_recognition_models (Bu olmazsa face_recognition çalışmaz)
-RUN pip install face_recognition_models
-
-# 3. face_recognition (Bağımlılıkları kontrol ederek kur)
+RUN pip install face-recognition-models
 RUN pip install face-recognition
 
-# 4. Geri kalan her şeyi kur (requirements.txt)
+# Proje dosyalarını kopyala
+COPY . .
+
+# Diğer gereksinimler (Requirements içinde face-recognition OLMAMALI)
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Render Port Ayarı
+# Port ve Başlatma
+ENV PORT=5000
 CMD gunicorn --bind 0.0.0.0:$PORT run:app
