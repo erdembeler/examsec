@@ -1,41 +1,41 @@
+# Python 3.10 slim
 FROM python:3.10-slim
 
+# Çalışma klasörü
 WORKDIR /app
 
-# Minimal sistem bağımlılıkları
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libopenblas-dev \
+# Gerekli sistem kütüphaneleri (minimal)
+RUN apt-get update && apt-get install -y \
+    libgl1 \
     libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    libjpeg-dev \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Pip güncelle
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-
-# Önce requirements.txt (face-recognition HARİÇ)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Face-recognition'ı ayrı kur (cache sorunu olmasın)
-RUN pip install --no-cache-dir dlib-bin face-recognition-models face-recognition
-
-# Proje dosyalarını kopyala
+# Dosyaları kopyala
 COPY . .
 
-# Çevre değişkenleri
-ENV PORT=5000
-ENV WEB_CONCURRENCY=1
+# pip güncelle
+RUN pip install --upgrade pip
+
+# 1. dlib-bin kur (hazır derlenmiş - RAM tüketmez)
+RUN pip install dlib-bin
+
+# 2. face_recognition'ı dlib bağımlılığı olmadan kur
+RUN pip install --no-deps face_recognition
+
+# 3. face_recognition'ın diğer bağımlılıklarını kur
+RUN pip install numpy Pillow click face_recognition_models
+
+# 4. Diğer gereksinimleri kur
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Portu aç
+EXPOSE 5000
+
+# Python optimizasyonları
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Gunicorn başlatma (RAM optimizasyonlu)
-CMD gunicorn --bind 0.0.0.0:$PORT \
-    --workers=1 \
-    --threads=2 \
-    --timeout=180 \
-    --max-requests=50 \
-    --max-requests-jitter=10 \
-    --worker-tmp-dir=/dev/shm \
-    --preload \
-    run:app
+# Gunicorn ile başlat (RAM optimizasyonlu)
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "2", "--timeout", "180", "--max-requests", "50", "--worker-tmp-dir", "/dev/shm", "run:app"]
