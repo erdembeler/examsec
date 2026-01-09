@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 
 const ProctorDashboard = () => {
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -190,7 +191,11 @@ const ProctorDashboard = () => {
                     <span className="label">Live Capture (Exam)</span>
                     <div className="photo-frame">
                         {selectedStudent.photo_url ? (
-                           <img src={`http://localhost:5000/api/images/${selectedStudent.photo_url}`} alt="Live" />
+                           <img 
+  src={`${API_URL}/images/${selectedStudent.photo_url}`} 
+  alt="Live" 
+  onError={(e) => { e.target.onerror = null; e.target.src="https://via.placeholder.com/200?text=Error"; }}
+/>
                         ) : (
                            <div className="no-photo"><FaUserClock size={30}/><br/>Waiting...</div>
                         )}

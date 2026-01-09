@@ -1,14 +1,23 @@
 # backend/app/routes.py
+
 import os
 import time
-from flask import Blueprint, jsonify, request, send_from_directory, current_app as app
+from flask import Blueprint, jsonify, request, send_from_directory
 from app import get_db_connection
-# services.py varsa import et, yoksa bu satırı yorum satırı yap
-from .services import verify_student_face 
+from .services import verify_student_face
 
 main = Blueprint('main', __name__)
 
-# 1. LOGIN
+# --- YARDIMCI: Resim Klasörünü Kesin Olarak Bul ---
+def get_upload_folder():
+    # Bu dosyanın (routes.py) olduğu yerden 2 yukarı çık -> backend/assets
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path = os.path.join(base_dir, 'assets')
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+# --- 1. LOGIN ---
 @main.route('/api/login', methods=['POST'])
 def login():
     try:
@@ -25,7 +34,7 @@ def login():
     finally: 
         if 'conn' in locals() and conn: conn.close()
 
-# 2. SINAVLARI GETİR
+# --- 2. GET EXAMS ---
 @main.route('/api/exams', methods=['GET'])
 def get_exams():
     try:
@@ -38,13 +47,12 @@ def get_exams():
     finally: 
         if 'conn' in locals() and conn: conn.close()
 
-# 3. ÖĞRENCİLERİ GETİR
+# --- 3. GET STUDENTS ---
 @main.route('/api/exam/<int:exam_id>/students', methods=['GET'])
 def get_exam_students(exam_id):
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        # Referans ve Canlı fotoları çekiyoruz
         query = """
             SELECT s.user_id, u.username, s.full_name, s.department, e.status, e.photo_url, s.reference_photo, e.violation_note
             FROM students s
@@ -72,7 +80,7 @@ def get_exam_students(exam_id):
     finally: 
         if 'conn' in locals() and conn: conn.close()
 
-# 4. CHECK-IN (FOTOĞRAF KAYDETME)
+# --- 4. CHECK-IN (FOTOĞRAF KAYDETME) ---
 @main.route('/api/check-in', methods=['POST'])
 def check_in():
     try:
@@ -80,22 +88,23 @@ def check_in():
         student_id_str = request.form.get('student_id')
         file = request.files.get('image')
         
-        if not file: 
-            return jsonify({"success": False, "message": "Dosya yok!"}), 400
+        if not file: return jsonify({"success": False, "message": "Dosya yok!"}), 400
         
-        # Klasörü init.py'den alıyoruz
-        upload_folder = app.config['UPLOAD_FOLDER']
-        if not os.path.exists(upload_folder):
-            os.makedirs(upload_folder)
-
-        # Dosya adını oluştur
+        # Klasör yolunu garantili fonksiyonla al
+        upload_folder = get_upload_folder()
         filename = f"{exam_id}_{student_id_str}_{int(time.time())}.jpg"
         save_path = os.path.join(upload_folder, filename)
         
         # Dosyayı kaydet
         file.save(save_path)
-        print(f"📸 Dosya Kaydedildi: {save_path}")
         
+        # Kontrol: Dosya gerçekten oluştu mu ve boyutu ne?
+        file_size = os.path.getsize(save_path)
+        print(f"📸 KAYDEDİLDİ: {save_path} (Boyut: {file_size} bytes)")
+        
+        if file_size < 100:
+            print("⚠️ UYARI: Dosya çok küçük (boş olabilir)!")
+
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("SELECT id FROM users WHERE username = %s", (student_id_str,))
@@ -106,22 +115,25 @@ def check_in():
                         (filename, exam_id, user_row[0]))
             conn.commit()
             return jsonify({"success": True, "seat": "Onay Bekliyor"}), 200
-        return jsonify({"success": False, "message": "Öğrenci bulunamadı"}), 404
+        return jsonify({"success": False}), 404
     except Exception as e: 
         print(f"Hata: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
     finally: 
         if 'conn' in locals() and conn: conn.close()
 
-# 5. RESMİ GÖSTERME (TARAYICI İÇİN)
+# --- 5. RESİM GÖSTERME (KRİTİK DÜZELTME) ---
 @main.route('/api/images/<filename>')
 def serve_image(filename):
     try:
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+        folder = get_upload_folder()
+        print(f"👀 Resim İsteniyor: {filename} -> Klasör: {folder}")
+        return send_from_directory(folder, filename)
     except FileNotFoundError:
-        return jsonify({"error": "Resim bulunamadı"}), 404
+        print(f"❌ Resim Bulunamadı: {filename}")
+        return jsonify({"error": "File not found"}), 404
 
-# 6. YAPAY ZEKA KONTROL
+# --- 6. AI CHECK ---
 @main.route('/api/run-face-check', methods=['POST'])
 def run_face_check():
     try:
@@ -148,12 +160,9 @@ def run_face_check():
             live_photo = student[2]
             
             if live_photo:
-                # Gerçek AI fonksiyonunu çağır
                 is_match, score, msg = verify_student_face(s_username, live_photo)
-                
                 new_status = 'present' if is_match else 'violation'
                 note = f"AI Score: %{score}" if is_match else f"AI Mismatch (%{score})"
-                
                 cur.execute("UPDATE enrollments SET status = %s, violation_note = %s WHERE exam_id = %s AND student_id = %s", 
                             (new_status, note, exam_id, s_db_id))
                 processed_count += 1
@@ -164,14 +173,13 @@ def run_face_check():
     finally: 
         if 'conn' in locals() and conn: conn.close()
 
-# 7. VIOLATION EKLE
+# --- 7. VIOLATION ---
 @main.route('/api/violation', methods=['POST'])
 def add_violation():
     try:
         data = request.get_json()
         conn = get_db_connection()
         cur = conn.cursor()
-        
         cur.execute("SELECT id FROM users WHERE username = %s", (data.get('studentId'),))
         user = cur.fetchone()
         if user:
