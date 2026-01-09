@@ -1,10 +1,9 @@
-# Python 3.10 slim
+# backend/Dockerfile
 FROM python:3.10-slim
 
-# Çalışma klasörü
 WORKDIR /app
 
-# Gerekli sistem kütüphaneleri (OpenCV ve dlib için)
+# Sistem kütüphanelerini en baştan sağlam kuralım
 RUN apt-get update && apt-get install -y \
     libgl1 \
     libglib2.0-0 \
@@ -12,26 +11,27 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     libopenblas-dev \
     liblapack-dev \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Önce dosyaları kopyala
+# Dosyaları kopyala
 COPY . .
 
 # pip güncelle
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip setuptools wheel
 
-# 1. dlib-bin kur (Hazır derlenmiş - RAM tüketmez, derleme yapmaz)
+# --- KRİTİK SIRALAMA ---
+# 1. dlib-bin (Hazır derlenmiş)
 RUN pip install dlib-bin
 
-# 2. face_recognition'ı dlib bağımlılığı olmadan kur
-RUN pip install --no-deps face_recognition
+# 2. face_recognition_models (Bu olmazsa face_recognition çalışmaz)
+RUN pip install face_recognition_models
 
-# 3. face_recognition'ın diğer bağımlılıklarını kur
-RUN pip install numpy==1.26.4 Pillow click face_recognition_models
+# 3. face_recognition (Bağımlılıkları kontrol ederek kur)
+RUN pip install face-recognition
 
-# 4. Diğer proje gereksinimlerini kur
+# 4. Geri kalan her şeyi kur (requirements.txt)
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Render'ın atayacağı PORT üzerinden çalıştırıyoruz
-# run:app -> run.py dosyasındaki app nesnesini çalıştırır
+# Render Port Ayarı
 CMD gunicorn --bind 0.0.0.0:$PORT run:app
