@@ -20,12 +20,19 @@ def create_app():
     return app
 
 # Basit bir veritabanı bağlantı fonksiyonu
+# backend/app/__init__.py içindeki get_db_connection fonksiyonunu bul ve bununla değiştir:
+
 def get_db_connection():
-    conn = psycopg2.connect(
-        host=os.environ.get('DB_HOST'),
-        database=os.environ.get('DB_NAME'),
-        user=os.environ.get('DB_USER'),
-        password=os.environ.get('DB_PASSWORD'),
-        port=os.environ.get('DB_PORT')
-    )
+    # Eğer sistemde DATABASE_URL varsa (Render/Neon ortamı) onu kullan
+    if os.environ.get('DATABASE_URL'):
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+    else:
+        # Yoksa lokal ayarlara bak (Senin Mac Mini ortamı)
+        conn = psycopg2.connect(
+            host=os.environ.get('DB_HOST'),
+            database=os.environ.get('DB_NAME'),
+            user=os.environ.get('DB_USER'),
+            password=os.environ.get('DB_PASSWORD'),
+            port=os.environ.get('DB_PORT')
+        )
     return conn

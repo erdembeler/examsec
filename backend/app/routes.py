@@ -1,19 +1,64 @@
 from flask import Blueprint, jsonify, request
 import os
+from werkzeug.utils import secure_filename
 from .services import verify_student_face
 from . import get_db_connection
-from werkzeug.utils import secure_filename
 
 main = Blueprint('main', __name__)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
+# --- 1. SİSTEM DURUMU ---
 @main.route('/api/status', methods=['GET'])
 def server_status():
     return jsonify({"status": "online", "message": "Sistem aktif"}), 200
 
+# --- 2. LOGIN (YENİ EKLENDİ) ---
+@main.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # Şifreyi basit kontrol ediyoruz (Hash mekanizması eklenebilir)
+        cur.execute("SELECT id, role, password_hash FROM users WHERE username = %s", (username,))
+        user = cur.fetchone()
+        
+        if user and user[2] == password:
+             return jsonify({
+                 "success": True, 
+                 "role": user[1], 
+                 "message": "Giriş başarılı"
+             }), 200
+        else:
+            return jsonify({"success": False, "message": "Hatalı kullanıcı veya şifre"}), 401
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+# --- 3. EXAMS (YENİ EKLENDİ) ---
+@main.route('/api/exams', methods=['GET'])
+def get_exams():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT id, title, room_code, exam_date FROM exams ORDER BY exam_date DESC")
+        rows = cur.fetchall()
+        exams = [{"id": r[0], "title": r[1], "room_code": r[2], "date": r[3]} for r in rows]
+        return jsonify(exams), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+# --- 4. CHECK-IN (NEON TESTİ İÇİN GÜNCELLENDİ) ---
 @main.route('/api/check-in', methods=['POST'])
 def check_in():
-    # 1. TEMEL KONTROLLER
     if 'image' not in request.files:
         return jsonify({"success": False, "message": "Fotoğraf yüklenmedi"}), 400
     
@@ -24,11 +69,10 @@ def check_in():
     if not student_number or not exam_id:
         return jsonify({"success": False, "message": "Eksik bilgi"}), 400
 
-    # 2. DOSYA UZANTISINI ALGILA
+    # Dosya ismini güvenli hale getir
     filename_original = secure_filename(file.filename)
     _, ext = os.path.splitext(filename_original)
-    if not ext:
-        ext = '.jpg'
+    if not ext: ext = '.jpg'
         
     filename = f"live_exam{exam_id}_{student_number}{ext}"
     save_path = os.path.join(BASE_DIR, 'assets', 'live_captures', filename)
@@ -40,54 +84,39 @@ def check_in():
     cur = conn.cursor()
 
     try:
-        # 3. ÖĞRENCİ ID BULMA
-        cur.execute("SELECT id FROM students WHERE student_number = %s", (student_number,))
+        # BURASI ÖNEMLİ: Neon bağlantısını kanıtlamak için İSMİ çekiyoruz
+        cur.execute("SELECT id, full_name FROM students WHERE student_number = %s", (student_number,))
         student_row = cur.fetchone()
         
         if not student_row:
             return jsonify({"success": False, "message": "Öğrenci veritabanında bulunamadı"}), 404
         
         student_db_id = student_row[0]
+        full_name = student_row[1] # Veritabanından gelen isim
 
-        # 4. YÜZ TANIMA İŞLEMİ
+        # Yüz Tanıma
         is_face_match, score, face_msg = verify_student_face(student_number, save_path)
 
-        # 5. OTURMA DÜZENİ KONTROLÜ
-        cur.execute("""
-            SELECT seat_code FROM seating_plans 
-            WHERE exam_id = %s AND student_id = %s
-        """, (exam_id, student_db_id))
+        # Oturma Düzeni
+        cur.execute("SELECT seat_code FROM seating_plans WHERE exam_id = %s AND student_id = %s", (exam_id, student_db_id))
         seat_row = cur.fetchone()
         
         has_valid_seat = (seat_row is not None)
         seat_code = seat_row[0] if has_valid_seat else "YOK"
 
-        # 6. MANTIK VE KARAR AĞACI (GÜNCELLENDİ)
-        violation_reason = None
-        final_message = ""
-        check_in_success = False
-
-        # Skor 0.0 ise teknik bir hata veya yüz bulunamama durumu vardır
+        # Mantık
+        success = False
         if score == 0.0:
-            check_in_success = False
-            final_message = f"Hata: {face_msg}" # Servisten gelen gerçek hatayı göster!
-            # Bunu violation olarak kaydetmeyelim çünkü teknik bir sorun olabilir (karanlık foto vs.)
-        
+            msg = f"Hata: {face_msg}"
         elif not is_face_match:
-            violation_reason = "Impersonation Risk (Face Mismatch)"
-            final_message = f"Giriş Başarısız: Yüz eşleşmedi (%{round(score,1)})"
-            check_in_success = False
-        
+            msg = f"Giriş Başarısız: Yüz eşleşmedi ({full_name})" # İsim mesajda görünecek
         elif is_face_match and not has_valid_seat:
-            violation_reason = "Unauthorized Seat (Not in List)"
-            final_message = f"Kimlik Doğrulandı ama öğrenci bu sınava kayıtlı değil."
-            check_in_success = False
-            
+            msg = f"Kimlik Doğrulandı ({full_name}) ama bu sınava kaydı yok."
         else:
-            final_message = f"Giriş Onaylandı. Sıra No: {seat_code}"
-            check_in_success = True
+            success = True
+            msg = f"Hoşgeldin {full_name}. Sıra No: {seat_code}"
 
-        # 7. VERİTABANI İŞLEMLERİ
+        # Kayıt (Check-ins)
         cur.execute("""
             INSERT INTO check_ins (exam_id, student_id, ml_verification_status, seat_compliance_status, live_photo_path)
             VALUES (%s, %s, %s, %s, %s)
@@ -99,155 +128,103 @@ def check_in():
                 live_photo_path = EXCLUDED.live_photo_path;
         """, (exam_id, student_db_id, is_face_match, has_valid_seat, web_image_path))
 
-        if violation_reason:
+        # İhlal Kaydı (Violations)
+        if not success and score > 0.0:
+            reason = "Impersonation" if not is_face_match else "Unauthorized Seat"
             cur.execute("""
                 INSERT INTO violations (exam_id, student_id, reason, notes, evidence_image_path)
                 VALUES (%s, %s, %s, %s, %s)
-            """, (exam_id, student_db_id, violation_reason, f"Score: {score}", web_image_path))
+            """, (exam_id, student_db_id, reason, f"Score: {score}", web_image_path))
 
         conn.commit()
 
-        # 8. SONUÇ
-        response_data = {
-            "success": check_in_success,
-            "message": final_message,
+        return jsonify({
+            "success": success,
+            "message": msg,
             "data": {
                 "student_id": student_number,
-                "match_score": round(score, 2),
+                "full_name": full_name, # React için ismi dönüyoruz
                 "seat_code": seat_code,
-                "violation_logged": (violation_reason is not None)
+                "match_score": round(score, 2)
             }
-        }
-        return jsonify(response_data), (200 if check_in_success else 401)
+        }), 200 if success else 401
 
     except Exception as e:
         conn.rollback()
-        return jsonify({"success": False, "message": f"Sistem hatası: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
     finally:
         cur.close()
         conn.close()
 
-# --- DASHBOARD / GÖZETMEN PANELİ API'LARI ---
+# --- 5. DASHBOARD ENDPOINTLERİ ---
 
 @main.route('/api/dashboard/stats/<int:exam_id>', methods=['GET'])
 def get_exam_stats(exam_id):
-    """
-    Gözetmen paneli için özet istatistikler.
-    React: "Toplam 30 öğrenci var, 12'si geldi, 2 ihlal var" kutucukları için.
-    """
     conn = get_db_connection()
     cur = conn.cursor()
-    
     try:
-        # 1. Toplam Öğrenci Sayısı (Bu sınava atanmış)
         cur.execute("SELECT COUNT(*) FROM seating_plans WHERE exam_id = %s", (exam_id,))
-        total_students = cur.fetchone()[0]
-        
-        # 2. Şu ana kadar giriş yapanlar
+        total = cur.fetchone()[0]
         cur.execute("SELECT COUNT(*) FROM check_ins WHERE exam_id = %s", (exam_id,))
-        present_count = cur.fetchone()[0]
-        
-        # 3. İhlal Sayısı
+        present = cur.fetchone()[0]
         cur.execute("SELECT COUNT(*) FROM violations WHERE exam_id = %s", (exam_id,))
-        violation_count = cur.fetchone()[0]
+        violations = cur.fetchone()[0]
         
         return jsonify({
             "exam_id": exam_id,
-            "total_students": total_students,
-            "present_count": present_count,
-            "violation_count": violation_count,
-            "attendance_rate": round((present_count / total_students * 100), 1) if total_students > 0 else 0
+            "total_students": total,
+            "present_count": present,
+            "violation_count": violations,
+            "attendance_rate": round((present/total*100), 1) if total > 0 else 0
         }), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
     finally:
         cur.close()
         conn.close()
 
 @main.route('/api/dashboard/violations/<int:exam_id>', methods=['GET'])
 def get_exam_violations(exam_id):
-    """
-    İhlalleri listeler (Kırmızı liste).
-    React: "Ayşe Yılmaz - Wrong Seat" satırı ve kanıt fotoğrafı için.
-    """
     conn = get_db_connection()
     cur = conn.cursor()
-    
     try:
-        query = """
-            SELECT 
-                v.id, 
-                s.student_number, 
-                s.full_name, 
-                v.reason, 
-                v.evidence_image_path, 
-                v.created_at
+        cur.execute("""
+            SELECT v.id, s.student_number, s.full_name, v.reason, v.evidence_image_path, v.created_at
             FROM violations v
             JOIN students s ON v.student_id = s.id
             WHERE v.exam_id = %s
             ORDER BY v.created_at DESC
-        """
-        cur.execute(query, (exam_id,))
-        rows = cur.fetchall()
+        """, (exam_id,))
         
-        # SQL verisini JSON listesine çevir
-        violations = []
-        for row in rows:
-            violations.append({
-                "id": row[0],
-                "student_number": row[1],
-                "full_name": row[2],
-                "reason": row[3],
-                "evidence_image": row[4], # React bu resmi gösterecek
-                "timestamp": row[5]
+        data = []
+        for r in cur.fetchall():
+            data.append({
+                "id": r[0], "student_number": r[1], "full_name": r[2],
+                "reason": r[3], "evidence_image": r[4], "timestamp": r[5]
             })
-            
-        return jsonify(violations), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify(data), 200
     finally:
         cur.close()
         conn.close()
 
 @main.route('/api/dashboard/live-feed/<int:exam_id>', methods=['GET'])
 def get_live_feed(exam_id):
-    """
-    Son giriş yapanları listeler (Canlı akış).
-    """
     conn = get_db_connection()
     cur = conn.cursor()
-    
     try:
-        query = """
-            SELECT 
-                s.full_name, 
-                c.checkin_time, 
-                c.ml_verification_status, 
-                c.seat_compliance_status
+        cur.execute("""
+            SELECT s.full_name, c.checkin_time, c.ml_verification_status, c.seat_compliance_status
             FROM check_ins c
             JOIN students s ON c.student_id = s.id
             WHERE c.exam_id = %s
-            ORDER BY c.checkin_time DESC
-            LIMIT 10
-        """
-        cur.execute(query, (exam_id,))
-        rows = cur.fetchall()
+            ORDER BY c.checkin_time DESC LIMIT 10
+        """, (exam_id,))
         
-        feed = []
-        for row in rows:
+        data = []
+        for r in cur.fetchall():
             status = "CLEAN"
-            if not row[2]: status = "FACE_MISMATCH"
-            elif not row[3]: status = "WRONG_SEAT"
-            
-            feed.append({
-                "full_name": row[0],
-                "time": row[1],
-                "status": status
-            })
-            
-        return jsonify(feed), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+            if not r[2]: status = "FACE_MISMATCH"
+            elif not r[3]: status = "WRONG_SEAT"
+            data.append({"full_name": r[0], "time": r[1], "status": status})
+        return jsonify(data), 200
     finally:
         cur.close()
         conn.close()
