@@ -4,4 +4,4 @@ psycopg2-binary
 python-dotenv
 gunicorn
 requests
-Pillow
+Pillow==10.2.0
