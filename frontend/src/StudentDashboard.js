@@ -1,69 +1,54 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './StudentDashboard.css'; 
-import { api } from './services/api'; // API bağlantısı
+import { api } from './services/api'; 
 import { 
-  FaUserGraduate, FaCamera, FaCheckCircle, 
-  FaExclamationCircle, FaIdCard, FaTimes, FaSpinner, FaMapMarkerAlt, FaClock
+  FaUserGraduate, FaCamera, FaUpload, FaCheckCircle, 
+  FaExclamationCircle, FaIdCard, FaTimes, FaSpinner 
 } from 'react-icons/fa';
 
 const StudentDashboard = () => {
-  // Kullanıcı Bilgileri
-  const studentId = localStorage.getItem('userId') || "Unknown";
-  // Demo amaçlı isim sabit, gerçekte /me endpointi ile çekilebilir
-  const studentName = "Student User"; 
-
-  // State'ler
-  const [activeExam, setActiveExam] = useState(null); // Aktif sınav bilgisi
-  const [livePhoto, setLivePhoto] = useState(null);   // Çekilen fotoğraf (gösterim için)
-  const [photoBlob, setPhotoBlob] = useState(null);   // API'ye gidecek dosya formatı
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const studentName = localStorage.getItem('fullName') || "Öğrenci";
+  const studentId = localStorage.getItem('userId') || "Bilinmiyor";
   
-  // Durumlar: 'idle', 'sending', 'success', 'error'
-  const [status, setStatus] = useState("idle"); 
-  const [message, setMessage] = useState("");
-  const [assignedSeat, setAssignedSeat] = useState("");
+  const [activeExam, setActiveExam] = useState(null);
+  const [referencePhoto, setReferencePhoto] = useState(null);
+  const [livePhoto, setLivePhoto] = useState(null); 
+  const [photoBlob, setPhotoBlob] = useState(null); // GERÇEK DOSYA VERİSİ
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState("idle");
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
-  // 1. Sayfa Açılınca Aktif Sınavı Bul
   useEffect(() => {
-    const fetchExam = async () => {
+    const init = async () => {
       try {
         const exams = await api.getExams();
-        if (exams && exams.length > 0) {
-          // Varsayım: İlk gelen sınav aktiftir.
-          setActiveExam(exams[0]); 
-        }
-      } catch (error) {
-        console.error("Exam fetch error:", error);
-      }
+        if (exams && exams.length > 0) setActiveExam(exams[0]); 
+      } catch (error) { console.error(error); }
     };
-    fetchExam();
+    init();
   }, []);
 
-  // 2. Kamerayı Aç
+  const handleReferenceUpload = () => {
+    setReferencePhoto("https://randomuser.me/api/portraits/men/32.jpg");
+    alert("Referans fotoğraf yüklendi (Demo).");
+  };
+
   const openCamera = () => {
     setIsCameraOpen(true);
-    setStatus("idle");
-    setMessage("");
+    setVerificationStatus("idle");
     startVideo();
   };
 
   const startVideo = () => {
     navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
+        if (videoRef.current) videoRef.current.srcObject = stream;
       })
-      .catch(err => {
-        console.error("Camera error:", err);
-        setMessage("Camera access denied.");
-      });
+      .catch(err => console.error("Kamera hatası:", err));
   };
 
-  // 3. Fotoğrafı Çek ve Dosyaya Çevir
   const capturePhoto = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -73,53 +58,43 @@ const StudentDashboard = () => {
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0);
       
-      // 1. Ekranda göstermek için Base64 URL
-      const photoUrl = canvas.toDataURL('image/jpeg');
-      setLivePhoto(photoUrl);
+      // Ekranda göstermek için
+      setLivePhoto(canvas.toDataURL('image/jpeg'));
 
-      // 2. API'ye göndermek için Blob (Dosya) oluştur
+      // Backend'e göndermek için (Blob)
       canvas.toBlob((blob) => {
         setPhotoBlob(blob);
       }, 'image/jpeg', 0.95);
       
-      // Kamerayı durdurma (Kullanıcı beğenmezse tekrar açacak)
       const stream = video.srcObject;
       const tracks = stream.getTracks();
       tracks.forEach(track => track.stop());
     }
   };
 
-  // 4. API'ye Gönder (Check-In)
-  // src/StudentDashboard.js içindeki sendToProctor fonksiyonunu güncelle:
-
   const sendToProctor = async () => {
-    if (!photoBlob || !activeExam) return;
+    if (!photoBlob || !activeExam) return alert("Fotoğraf hatası!");
 
-    setStatus("sending");
-    setMessage("Sending to proctor...");
+    setVerificationStatus("sending");
     
     try {
-      const response = await api.checkIn(activeExam.id, studentId, photoBlob);
-
-      // Backend artık her zaman success:true dönecek (dosya bozuk değilse)
-      if (response.success) {
-        setStatus("success");
-        // Koltuk numarasını hemen göstermiyoruz, çünkü onaylanmadı.
-        setAssignedSeat("Approval Pending"); 
-        setMessage("Photo sent! Please wait for the proctor to admit you.");
+        // Gerçek API isteği (api.js içindeki checkIn fonksiyonu kullanılacak)
+        const response = await api.checkIn(activeExam.id, studentId, photoBlob);
         
-        // Modalı kapat
-        setTimeout(() => {
-            setIsCameraOpen(false);
-        }, 3000);
-      } else {
-        setStatus("error");
-        setMessage(response.message || "Upload failed.");
-      }
+        if (response.success) {
+            setVerificationStatus("success");
+            setTimeout(() => {
+                setIsCameraOpen(false);
+                setLivePhoto(null);
+                setPhotoBlob(null);
+            }, 2000);
+        } else {
+            setVerificationStatus("error");
+            alert("Hata: " + response.message);
+        }
     } catch (error) {
-      console.error(error);
-      setStatus("error");
-      setMessage("Server connection failed.");
+        setVerificationStatus("error");
+        alert("Sunucu hatası!");
     }
   };
 
@@ -138,125 +113,71 @@ const StudentDashboard = () => {
   return (
     <div className="std-dashboard-wrapper">
       <div className="std-container">
-        
-        {/* Header */}
         <header className="std-header">
            <div className="std-profile">
               <div className="profile-icon"><FaUserGraduate /></div>
-              <div className="profile-text">
-                <h2>Student Portal</h2>
-                <p>{studentName} - {studentId}</p>
-              </div>
+              <div className="profile-text"><h2>Öğrenci Paneli</h2><p>{studentName} ({studentId})</p></div>
            </div>
-           <button className="btn-logout" onClick={() => window.location.href='/'}>Logout</button>
+           <button className="btn-logout" onClick={() => window.location.href='/'}>Çıkış</button>
         </header>
 
         <div className="std-content">
-            
-            {/* SINAV KARTI */}
-            <div className="std-card exam-card" style={{width: '100%', maxWidth: '600px', margin: '0 auto'}}>
-                <div className="card-badge">Active Exam</div>
-                
+            <div className="std-card exam-card">
+                <div className="card-badge">Aktif</div>
                 {activeExam ? (
                     <>
                         <h3>{activeExam.title}</h3>
                         <div className="exam-details">
-                            <span><FaClock/> {new Date(activeExam.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                            <span><FaMapMarkerAlt/> {activeExam.room_code || "Room TBD"}</span>
+                            <span>📅 {new Date(activeExam.date).toLocaleDateString()}</span>
+                            <span>⏰ {new Date(activeExam.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                            <span>📍 {activeExam.room_code || "Online"}</span>
                         </div>
-
                         <hr className="divider"/>
-
                         <div className="exam-action">
-                            {status === 'success' ? (
-                                <div className="status-box success">
-                                    <FaCheckCircle size={32} style={{marginBottom:'10px'}}/>
-                                    <h2 style={{margin:0}}>{assignedSeat}</h2>
-                                    <p>Your Seat Number</p>
-                                    <small>Checked in successfully</small>
-                                </div>
+                            {verificationStatus === 'success' ? (
+                                <div className="status-box success"><FaCheckCircle/> <p>Gönderildi! Onay Bekleniyor.</p></div>
                             ) : (
-                                <>
-                                    <p className="info-text" style={{marginBottom:'15px', color:'#555'}}>
-                                        Please verify your identity to view your seat number.
-                                    </p>
-                                    <button className="btn-start-exam" onClick={openCamera}>
-                                        <FaIdCard/> Start Face Verification
-                                    </button>
-                                </>
+                                <button className="btn-start-exam" onClick={openCamera}><FaIdCard/> Sınava Giriş Yap</button>
                             )}
                         </div>
                     </>
-                ) : (
-                    <div style={{padding:'30px', textAlign:'center', color:'#777'}}>
-                        <FaExclamationCircle size={30}/>
-                        <p>No active exams found for today.</p>
-                    </div>
-                )}
+                ) : (<p>Sınav yok.</p>)}
             </div>
 
+            <div className={`std-card upload-card ${referencePhoto ? 'completed' : ''}`}>
+                <h4><FaCamera/> Referans Fotoğraf</h4>
+                <div className="upload-area">
+                    {referencePhoto ? (
+                        <div className="preview-box"><img src={referencePhoto} alt="Ref"/><span className="verified-badge">Yüklendi</span></div>
+                    ) : (<div className="placeholder-box">Fotoğraf Yok</div>)}
+                </div>
+                {!referencePhoto && <button className="btn-upload" onClick={handleReferenceUpload}><FaUpload/> Yükle (Demo)</button>}
+            </div>
         </div>
-
       </div>
 
-      {/* --- YÜZ TARAMA MODALI (POPUP) --- */}
       {isCameraOpen && (
         <div className="camera-modal-overlay">
             <div className="camera-modal">
-                <div className="modal-header">
-                    <h3>Identity Verification</h3>
-                    <button className="btn-close" onClick={closeCamera}><FaTimes/></button>
-                </div>
-                
+                <div className="modal-header"><h3>Yüz Doğrulama</h3><button className="btn-close" onClick={closeCamera}><FaTimes/></button></div>
                 <div className="camera-view">
-                    {status === 'sending' && (
-                        <div className="loader-overlay">
-                            <FaSpinner className="fa-spin" size={40} color="white"/>
-                            <p>Verifying with AI...</p>
-                        </div>
-                    )}
-
-                    {!livePhoto ? (
-                        <>
-                            <video ref={videoRef} autoPlay playsInline className="video-feed"></video>
-                            <div className="scan-line"></div> 
-                            <p className="camera-hint">Position your face in the frame</p>
-                        </>
-                    ) : (
-                        <img src={livePhoto} alt="Captured" className="captured-img" />
-                    )}
+                    {verificationStatus === 'sending' && <div className="loader-overlay"><FaSpinner className="fa-spin"/> Gönderiliyor...</div>}
+                    {!livePhoto ? <video ref={videoRef} autoPlay playsInline className="video-feed"></video> : <img src={livePhoto} className="captured-img" alt="c"/>}
                     <canvas ref={canvasRef} style={{display:'none'}}></canvas>
                 </div>
-
-                {/* DURUM MESAJI */}
-                {message && (
-                    <div className={`status-message ${status}`}>
-                        {status === 'error' && <FaExclamationCircle/>}
-                        {status === 'success' && <FaCheckCircle/>}
-                        {message}
-                    </div>
-                )}
-
                 <div className="modal-actions">
-                    {!livePhoto ? (
-                        <button className="btn-capture" onClick={capturePhoto}>
-                            <FaCamera/> Capture Photo
-                        </button>
-                    ) : (
-                        status !== 'success' && status !== 'sending' && (
+                    {!livePhoto ? <button className="btn-capture" onClick={capturePhoto}><FaCamera/> Çek</button> : 
+                        verificationStatus !== 'sending' && verificationStatus !== 'success' && (
                             <div className="action-buttons">
-                                <button className="btn-retry" onClick={retryPhoto}>Retake</button>
-                                <button className="btn-send" onClick={sendToProctor}>
-                                    Confirm & Send
-                                </button>
+                                <button className="btn-retry" onClick={retryPhoto}>Tekrar</button>
+                                <button className="btn-send" onClick={sendToProctor}>Gönder</button>
                             </div>
                         )
-                    )}
+                    }
                 </div>
             </div>
         </div>
       )}
-
     </div>
   );
 };

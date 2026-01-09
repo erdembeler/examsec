@@ -1,61 +1,65 @@
 // src/services/api.js
 
 // Proxy ayarı package.json'da olduğu için sadece /api yazmamız yeterli
-const BASE_URL = "/api"; 
+const API_URL = "/api"; 
 
 export const api = {
-  // 1. GİRİŞ YAP (LOGIN)
+  // 1. GİRİŞ YAPMA
   login: async (username, password) => {
-    const res = await fetch(`${BASE_URL}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+    const response = await fetch(`${API_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
     });
-    return res.json();
+    return response.json();
   },
-
-  // 2. SINAVLARI GETİR (EXAMS)
+  
+  // 2. SINAVLARI GETİR
   getExams: async () => {
-    const res = await fetch(`${BASE_URL}/exams`);
-    return res.json();
+    const response = await fetch(`${API_URL}/exams`);
+    return response.json();
   },
-
-  // 3. CHECK-IN (FOTOĞRAF GÖNDERME)
-  checkIn: async (examId, studentId, imageFile) => {
-    const formData = new FormData();
-    formData.append("exam_id", examId);
-    formData.append("student_id", studentId);
-    formData.append("image", imageFile);
-
-    const res = await fetch(`${BASE_URL}/check-in`, {
-      method: "POST",
-      body: formData,
-      // FormData kullanırken Content-Type header'ı eklenmez! Tarayıcı halleder.
-    });
-    return res.json();
-  },
-
-  // 4. GÖZETMEN İSTATİSTİKLERİ
-  getStats: async (examId) => {
-    const res = await fetch(`${BASE_URL}/dashboard/stats/${examId}`);
-    return res.json();
-  },
-
-  // 5. CANLI AKIŞ (SON GİRENLER)
-  getLiveFeed: async (examId) => {
-    const res = await fetch(`${BASE_URL}/dashboard/live-feed/${examId}`);
-    return res.json();
-  },
-
-  // 6. İHLALLER (VIOLATIONS)
-  getViolations: async (examId) => {
-    const res = await fetch(`${BASE_URL}/dashboard/violations/${examId}`);
-    return res.json();
-  },
-  // 7. SINAVA AİT ÖĞRENCİLERİ GETİR (GÜNCELLENDİ)
+  
+  // 3. SINAVDAKİ ÖĞRENCİLERİ GETİR
   getExamStudents: async (examId) => {
-    const res = await fetch(`${BASE_URL}/exam/${examId}/students`);
-    return res.json();
+    const response = await fetch(`${API_URL}/exam/${examId}/students`);
+    return response.json();
   },
 
+  // 4. FOTOĞRAF GÖNDER (CHECK-IN) - EN ÖNEMLİ KISIM
+  checkIn: async (examId, studentId, imageBlob) => {
+    const formData = new FormData();
+    formData.append('exam_id', examId);
+    formData.append('student_id', studentId);
+    // Blob verisini 'capture.jpg' adıyla dosyaya çevirip ekliyoruz
+    formData.append('image', imageBlob, 'capture.jpg');
+
+    // Fetch ile FormData gönderirken 'Content-Type' header'ı YAZILMAZ.
+    // Tarayıcı bunu otomatik halleder.
+    const response = await fetch(`${API_URL}/check-in`, {
+      method: 'POST',
+      body: formData
+    });
+    return response.json();
+  },
+
+  // 5. AI KONTROLÜ (Gözetmen)
+  runAiCheck: async (examId) => {
+    const response = await fetch(`${API_URL}/run-face-check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ examId })
+    });
+    return response.json();
+  },
+
+  // 6. İHLAL EKLE (Gözetmen)
+  addViolation: async (examId, studentId, note) => {
+    const response = await fetch(`${API_URL}/violation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ examId, studentId, note })
+    });
+    return response.json();
+  }
 };

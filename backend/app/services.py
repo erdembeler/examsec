@@ -1,69 +1,82 @@
+# backend/app/services.py
+
 import face_recognition
 import os
-from . import get_db_connection
+from . import get_db_connection # init.py'deki fonksiyonu kullanır
 
-# Dosya yollarını yönetmek için temel klasör
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-
-def verify_student_face(student_id, live_image_path):
+def verify_student_face(student_username, live_image_name):
+    """
+    student_username: Öğrenci No (Örn: 220706010)
+    live_image_name: Sınav anında çekilen dosyanın adı (Örn: 1_2207...jpg)
+    """
+    # Resimlerin olduğu klasörü dinamik olarak bul
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    upload_folder = os.path.join(base_dir, 'assets')
 
     conn = get_db_connection()
     cur = conn.cursor()
 
     try:
-        # 1. Veritabanından öğrencinin kayıtlı fotoğraf yolunu al
-        cur.execute("SELECT registered_photo_path FROM students WHERE student_number = %s", (student_id,))
+        # 1. Veritabanından Referans Fotoğrafın yolunu/adını bul
+        # Users tablosundan username ile user_id bulup students tablosuna gidiyoruz
+        query = """
+            SELECT s.reference_photo 
+            FROM students s
+            JOIN users u ON s.user_id = u.id
+            WHERE u.username = %s
+        """
+        cur.execute(query, (student_username,))
         result = cur.fetchone()
 
-        if not result:
-            return False, 0.0, "Öğrenci bulunamadı."
+        if not result or not result[0]:
+            print(f"❌ {student_username} için referans fotoğraf veritabanında yok.")
+            return False, 0.0, "Referans fotoğraf kaydı yok."
 
-        # Veritabanındaki yol: /assets/photos/220706011.jpg
-        # Bunu gerçek dosya yoluna çevirmemiz lazım
-        db_path = result[0]
-        registered_img_full_path = os.path.join(BASE_DIR, db_path.lstrip('/'))
+        # Veritabanında tam URL (http...) veya dosya yolu olabilir. Sadece dosya adını alıyoruz.
+        ref_photo_name = os.path.basename(result[0]) 
 
-        # 2. Dosyalar var mı kontrol et
-        if not os.path.exists(registered_img_full_path):
-            return False, 0.0, f"Kayıtlı fotoğraf sunucuda bulunamadı: {db_path}"
-        
-        if not os.path.exists(live_image_path):
-            return False, 0.0, "Canlı fotoğraf işlenemedi."
+        # 2. Dosya Yollarını Oluştur
+        ref_path = os.path.join(upload_folder, ref_photo_name)
+        live_path = os.path.join(upload_folder, os.path.basename(live_image_name))
 
-        # 3. Yüz Tanıma İşlemi (Face Recognition)
-        # Kayıtlı fotoğrafı yükle ve encode et
-        registered_image = face_recognition.load_image_file(registered_img_full_path)
-        registered_encodings = face_recognition.face_encodings(registered_image)
+        # Dosya var mı kontrolü
+        if not os.path.exists(ref_path):
+            return False, 0.0, f"Referans dosyası sunucuda yok: {ref_photo_name}"
+        if not os.path.exists(live_path):
+            return False, 0.0, "Canlı fotoğraf dosyası bulunamadı."
 
-        if not registered_encodings:
-            return False, 0.0, "Kayıtlı fotoğrafta yüz bulunamadı."
-        
-        registered_encoding = registered_encodings[0]
+        print(f"🧠 AI Karşılaştırıyor: {ref_photo_name} vs {live_image_name}")
 
-        # Canlı fotoğrafı yükle ve encode et
-        live_image = face_recognition.load_image_file(live_image_path)
+        # 3. Yüz Tanıma İşlemi
+        # Referans Resmi
+        ref_image = face_recognition.load_image_file(ref_path)
+        ref_encodings = face_recognition.face_encodings(ref_image)
+        if not ref_encodings:
+            return False, 0.0, "Referans fotoğrafta yüz bulunamadı."
+        ref_encoding = ref_encodings[0]
+
+        # Canlı Resim
+        live_image = face_recognition.load_image_file(live_path)
         live_encodings = face_recognition.face_encodings(live_image)
-
         if not live_encodings:
-            return False, 0.0, "Gönderilen fotoğrafta yüz tespit edilemedi."
-        
+            return False, 0.0, "Canlı fotoğrafta yüz tespit edilemedi."
         live_encoding = live_encodings[0]
 
         # 4. Karşılaştırma (Compare)
-        # tolerance=0.6 standarttır. Daha düşük değer daha katı güvenlik demektir.
-        results = face_recognition.compare_faces([registered_encoding], live_encoding, tolerance=0.6)
-        face_distance = face_recognition.face_distance([registered_encoding], live_encoding)
+        # Tolerance 0.6 standarttır. 
+        match_results = face_recognition.compare_faces([ref_encoding], live_encoding, tolerance=0.6)
+        face_distance = face_recognition.face_distance([ref_encoding], live_encoding)
         
-        # Distance ne kadar düşükse benzerlik o kadar yüksektir.
-        # Skoru 0-100 arasına çevirelim (Ters orantı)
-        match_score = (1 - face_distance[0]) * 100 
-        is_match = bool(results[0])
+        is_match = bool(match_results[0])
+        # Benzerlik skoru (0 ile 100 arası)
+        match_score = round((1 - face_distance[0]) * 100, 2)
 
-        return is_match, match_score, "Eşleşme başarılı" if is_match else "Yüzler eşleşmedi"
+        print(f"✅ Sonuç: {is_match} (Skor: {match_score})")
+        return is_match, match_score, "Eşleşme Başarılı" if is_match else "Yüzler Eşleşmedi"
 
     except Exception as e:
-        print(f"HATA: {e}")
-        return False, 0.0, f"Sistem hatası: {str(e)}"
+        print(f"❌ AI Hatası: {e}")
+        return False, 0.0, f"Hata: {str(e)}"
     finally:
         cur.close()
         conn.close()

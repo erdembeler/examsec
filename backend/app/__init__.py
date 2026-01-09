@@ -1,18 +1,15 @@
+# backend/app/__init__.py
 import os
 import psycopg2
 from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
-from pathlib import Path
 
 def get_db_connection():
-    # 1. Cloud (Neon/Render) kontrolü
-    db_url = os.environ.get('DATABASE_URL')
-    
-    if db_url:
-        conn = psycopg2.connect(db_url)
+    # Veritabanı bağlantısı
+    if os.environ.get('DATABASE_URL'):
+        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
     else:
-        # 2. Yerel ayarlar (Fallback)
         conn = psycopg2.connect(
             host=os.environ.get('DB_HOST'),
             database=os.environ.get('DB_NAME'),
@@ -23,26 +20,23 @@ def get_db_connection():
     return conn
 
 def create_app():
+    load_dotenv()
     app = Flask(__name__)
-    CORS(app) 
+    CORS(app) # Frontend ile iletişim izni
 
-    # --- KESİN ÇÖZÜM: .env DOSYASINI BUL ---
-    # Bu dosyanın (init.py) olduğu yerden 2 klasör yukarı çıkıp .env'i buluyoruz.
-    # backend/app/__init__.py  ->  backend/app/  ->  backend/  -> .env
-    env_path = Path(__file__).resolve().parent.parent / '.env'
-    load_dotenv(dotenv_path=env_path)
+    # --- EN KRİTİK KISIM: RESİM KLASÖRÜ ---
+    # backend/app/ klasöründen iki yukarı çık -> backend/ -> assets/
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    upload_folder = os.path.join(base_dir, 'assets')
     
-    # KONTROL: Terminale basar (Böylece okuyup okumadığını anlarız)
-    print("------------------------------------------------")
-    print(f"📡 .env Dosya Yolu: {env_path}")
-    print(f"🔑 Veritabanı URL Okundu mu?: {'EVET' if os.environ.get('DATABASE_URL') else 'HAYIR'}")
-    print("------------------------------------------------")
-
-    # Resim klasörü ayarı
-    upload_folder = os.path.join(os.getcwd(), 'assets')
+    # Klasör yoksa oluştur
     if not os.path.exists(upload_folder):
         os.makedirs(upload_folder)
+
+    # Flask'a bu yolu öğretiyoruz
     app.config['UPLOAD_FOLDER'] = upload_folder
+    print(f"✅ SİSTEM HAZIR: Resimler buraya kaydedilecek -> {upload_folder}")
+    # --------------------------------------
 
     from .routes import main
     app.register_blueprint(main)
