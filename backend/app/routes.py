@@ -126,3 +126,128 @@ def check_in():
     finally:
         cur.close()
         conn.close()
+
+# --- DASHBOARD / GÖZETMEN PANELİ API'LARI ---
+
+@main.route('/api/dashboard/stats/<int:exam_id>', methods=['GET'])
+def get_exam_stats(exam_id):
+    """
+    Gözetmen paneli için özet istatistikler.
+    React: "Toplam 30 öğrenci var, 12'si geldi, 2 ihlal var" kutucukları için.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        # 1. Toplam Öğrenci Sayısı (Bu sınava atanmış)
+        cur.execute("SELECT COUNT(*) FROM seating_plans WHERE exam_id = %s", (exam_id,))
+        total_students = cur.fetchone()[0]
+        
+        # 2. Şu ana kadar giriş yapanlar
+        cur.execute("SELECT COUNT(*) FROM check_ins WHERE exam_id = %s", (exam_id,))
+        present_count = cur.fetchone()[0]
+        
+        # 3. İhlal Sayısı
+        cur.execute("SELECT COUNT(*) FROM violations WHERE exam_id = %s", (exam_id,))
+        violation_count = cur.fetchone()[0]
+        
+        return jsonify({
+            "exam_id": exam_id,
+            "total_students": total_students,
+            "present_count": present_count,
+            "violation_count": violation_count,
+            "attendance_rate": round((present_count / total_students * 100), 1) if total_students > 0 else 0
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@main.route('/api/dashboard/violations/<int:exam_id>', methods=['GET'])
+def get_exam_violations(exam_id):
+    """
+    İhlalleri listeler (Kırmızı liste).
+    React: "Ayşe Yılmaz - Wrong Seat" satırı ve kanıt fotoğrafı için.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        query = """
+            SELECT 
+                v.id, 
+                s.student_number, 
+                s.full_name, 
+                v.reason, 
+                v.evidence_image_path, 
+                v.created_at
+            FROM violations v
+            JOIN students s ON v.student_id = s.id
+            WHERE v.exam_id = %s
+            ORDER BY v.created_at DESC
+        """
+        cur.execute(query, (exam_id,))
+        rows = cur.fetchall()
+        
+        # SQL verisini JSON listesine çevir
+        violations = []
+        for row in rows:
+            violations.append({
+                "id": row[0],
+                "student_number": row[1],
+                "full_name": row[2],
+                "reason": row[3],
+                "evidence_image": row[4], # React bu resmi gösterecek
+                "timestamp": row[5]
+            })
+            
+        return jsonify(violations), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@main.route('/api/dashboard/live-feed/<int:exam_id>', methods=['GET'])
+def get_live_feed(exam_id):
+    """
+    Son giriş yapanları listeler (Canlı akış).
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    try:
+        query = """
+            SELECT 
+                s.full_name, 
+                c.checkin_time, 
+                c.ml_verification_status, 
+                c.seat_compliance_status
+            FROM check_ins c
+            JOIN students s ON c.student_id = s.id
+            WHERE c.exam_id = %s
+            ORDER BY c.checkin_time DESC
+            LIMIT 10
+        """
+        cur.execute(query, (exam_id,))
+        rows = cur.fetchall()
+        
+        feed = []
+        for row in rows:
+            status = "CLEAN"
+            if not row[2]: status = "FACE_MISMATCH"
+            elif not row[3]: status = "WRONG_SEAT"
+            
+            feed.append({
+                "full_name": row[0],
+                "time": row[1],
+                "status": status
+            })
+            
+        return jsonify(feed), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
