@@ -1,12 +1,14 @@
+# backend/app/routes.py
+
 import os
 import time
 import traceback
-from flask import Blueprint, jsonify, request, current_app as app
+from flask import Blueprint, jsonify, request, send_from_directory, current_app as app
 from app import get_db_connection
 
 main = Blueprint('main', __name__)
 
-# --- 1. GİRİŞ YAP (LOGIN) ---
+# --- 1. LOGIN ---
 @main.route('/api/login', methods=['POST'])
 def login():
     try:
@@ -17,41 +19,28 @@ def login():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Kullanıcıyı bul
-        cur.execute("SELECT id, role, password_hash, full_name FROM users WHERE username = %s", (username,))
+        # Sadece temel bilgileri çekiyoruz (full_name yok)
+        cur.execute("SELECT id, role, password_hash FROM users WHERE username = %s", (username,))
         user = cur.fetchone()
         
         if user:
             db_role = user[1]
             db_pass = user[2]
             
-            # Şifre kontrolü
             if str(db_pass).strip() == str(password).strip():
-                return jsonify({
-                    "success": True, 
-                    "role": db_role, 
-                    "userId": username,
-                    "message": "Giriş başarılı"
-                }), 200
+                return jsonify({"success": True, "role": db_role, "userId": username}), 200
             else:
                 return jsonify({"success": False, "message": "Hatalı şifre"}), 401
         else:
             return jsonify({"success": False, "message": "Kullanıcı bulunamadı"}), 401
-    
+            
     except Exception as e:
-        # HATA OLURSA TERMİNALE YAZ (Böylece sebebini görürüz)
-        print("\n🚨 LOGIN HATASI:")
-        print(f"Hata Mesajı: {str(e)}")
-        traceback.print_exc()
-        print("------------------------------------------------\n")
         return jsonify({"error": str(e)}), 500
-        
     finally:
-        # Bağlantıyı güvenli kapat
         if 'cur' in locals() and cur: cur.close()
         if 'conn' in locals() and conn: conn.close()
 
-# --- 2. SINAVLARI LİSTELE ---
+# --- 2. GET EXAMS ---
 @main.route('/api/exams', methods=['GET'])
 def get_exams():
     try:
@@ -72,21 +61,21 @@ def get_exams():
             
         return jsonify(exams_list), 200
     except Exception as e:
-        print(f"EXAMS ERROR: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if 'cur' in locals() and cur: cur.close()
         if 'conn' in locals() and conn: conn.close()
 
-# --- 3. SINAVIN ÖĞRENCİLERİNİ GETİR ---
+# --- 3. GET EXAM STUDENTS (Fotoğraflı) ---
 @main.route('/api/exam/<int:exam_id>/students', methods=['GET'])
 def get_exam_students(exam_id):
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         
+        # photo_url sütununu da çekiyoruz
         query = """
-            SELECT s.user_id, u.username, s.full_name, s.department, e.status
+            SELECT s.user_id, u.username, s.full_name, s.department, e.status, e.photo_url
             FROM students s
             JOIN users u ON s.user_id = u.id
             JOIN enrollments e ON s.user_id = e.student_id
@@ -103,18 +92,18 @@ def get_exam_students(exam_id):
                 "name": row[2],
                 "dept": row[3],
                 "status": row[4],
+                "photo_url": row[5], # Fotoğraf yolu
                 "violation": None
             })
 
         return jsonify(students), 200
     except Exception as e:
-        print(f"STUDENTS ERROR: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         if 'cur' in locals() and cur: cur.close()
         if 'conn' in locals() and conn: conn.close()
 
-# --- 4. CHECK-IN (FOTOĞRAF GÖNDERME) ---
+# --- 4. CHECK-IN (Fotoğraf Kaydetmeli) ---
 @main.route('/api/check-in', methods=['POST'])
 def check_in():
     try:
@@ -126,9 +115,11 @@ def check_in():
             
         file = request.files['image']
         
+        # Klasör kontrolü
         if not os.path.exists(app.config['UPLOAD_FOLDER']):
             os.makedirs(app.config['UPLOAD_FOLDER'])
 
+        # Dosya adını oluştur ve kaydet
         filename = f"{exam_id}_{student_id_str}_{int(time.time())}.jpg"
         save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(save_path)
@@ -136,6 +127,7 @@ def check_in():
         conn = get_db_connection()
         cur = conn.cursor()
         
+        # Öğrenci ID bul
         cur.execute("SELECT id FROM users WHERE username = %s", (student_id_str,))
         user_row = cur.fetchone()
         
@@ -144,18 +136,19 @@ def check_in():
              
         db_student_id = user_row[0]
 
+        # Veritabanına dosya adını (photo_url) ve durumu kaydet
         query = """
             UPDATE enrollments 
-            SET status = 'pending' 
+            SET status = 'pending', photo_url = %s
             WHERE exam_id = %s AND student_id = %s
         """
-        cur.execute(query, (exam_id, db_student_id))
+        cur.execute(query, (filename, exam_id, db_student_id))
         conn.commit()
         
         return jsonify({
             "success": True, 
-            "message": "Photo sent to proctor.",
-            "seat": "Waiting for Approval"
+            "message": "Photo sent successfully.",
+            "seat": "Approval Pending"
         }), 200
 
     except Exception as e:
@@ -164,3 +157,9 @@ def check_in():
     finally:
         if 'cur' in locals() and cur: cur.close()
         if 'conn' in locals() and conn: conn.close()
+
+# --- 5. YENİ: FOTOĞRAF GÖSTERME SERVİSİ ---
+# Frontend bu adrese istek atınca resmi göndereceğiz
+@main.route('/api/images/<filename>')
+def serve_image(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
