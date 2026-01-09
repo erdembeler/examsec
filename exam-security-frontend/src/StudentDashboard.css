@@ -1,0 +1,205 @@
+/* StudentDashboard.css */
+
+.std-dashboard-wrapper {
+    background-color: #f0f2f5;
+    min-height: 100vh;
+    padding: 40px 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+}
+
+.std-container {
+    width: 100%;
+    max-width: 900px;
+}
+
+/* Header */
+.std-header {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+.std-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.profile-icon {
+    width: 50px;
+    height: 50px;
+    background-color: #e6f0ff;
+    color: #0061f2;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+}
+
+.profile-text h2 { margin: 0; font-size: 20px; color: #333; }
+.profile-text p { margin: 0; color: #777; font-size: 14px; }
+
+.btn-logout {
+    background: transparent;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+.btn-logout:hover { background: #dc3545; color: white; }
+
+/* İçerik Düzeni (Grid) */
+.std-content {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr; /* Sol geniş, Sağ dar */
+    gap: 25px;
+}
+
+/* Kart Genel Stil */
+.std-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+/* Sınav Kartı */
+.exam-card { border-top: 5px solid #0061f2; }
+.card-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #e6f4ea;
+    color: #1e7e34;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.exam-details {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+    color: #555;
+    font-size: 14px;
+}
+
+.divider { border: 0; border-top: 1px solid #eee; margin: 20px 0; }
+
+.success-text { color: #28a745; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 14px;}
+.warning-text { color: #d9534f; font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 14px;}
+
+.btn-start-exam {
+    width: 100%;
+    padding: 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.2s;
+}
+
+.btn-start-exam:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3); }
+
+.btn-start-exam.disabled {
+    background-color: #e0e0e0;
+    color: #999;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Yükleme Kartı */
+.upload-card.completed { border: 2px solid #28a745; }
+
+.upload-desc { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+
+.upload-area {
+    background-color: #f8f9fa;
+    border: 2px dashed #ddd;
+    border-radius: 10px;
+    height: 180px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.placeholder-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #aaa;
+    gap: 10px;
+}
+
+.preview-box {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+.preview-box img { width: 100%; height: 100%; object-fit: cover; }
+.verified-badge {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(40, 167, 69, 0.9);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.upload-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-upload, .btn-camera {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.btn-upload { background-color: #0061f2; color: white; }
+.btn-upload:hover { background-color: #004ebd; }
+
+.btn-camera { background-color: #6c757d; color: white; }
+.btn-camera:hover { background-color: #545b62; }
+
+/* Mobil Uyumluluk */
+@media (max-width: 768px) {
+    .std-content { grid-template-columns: 1fr; }
+}

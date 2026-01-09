@@ -1,0 +1,92 @@
+/* InstructorDashboard.css */
+.inst-wrapper {
+    background-color: #f0f2f5;
+    min-height: 100vh;
+    padding: 20px;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.inst-header {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.header-left { display: flex; align-items: center; gap: 15px; }
+.icon-box {
+    width: 50px; height: 50px; background: #6f42c1; color: white;
+    border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 24px;
+}
+.header-left h2 { margin: 0; font-size: 20px; color: #333; }
+.header-left p { margin: 0; color: #666; font-size: 14px; }
+
+.btn-save {
+    background: #28a745; color: white; border: none; padding: 12px 25px;
+    border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;
+}
+
+.inst-content {
+    display: flex; gap: 20px;
+}
+
+.panel {
+    background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+/* Sol Panel */
+.settings-panel { width: 300px; height: fit-content; }
+.form-group { margin-bottom: 20px; }
+.form-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+
+.distribution-buttons { display: flex; flex-direction: column; gap: 10px; margin: 20px 0; }
+.btn-action { padding: 12px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px;}
+.random { background: #17a2b8; }
+.butterfly { background: #6610f2; }
+
+.legend { margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; }
+.legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; font-size: 14px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+.dot.blue { background: #e3f2fd; border: 2px solid #2196f3; }
+.dot.orange { background: #fff3e0; border: 2px solid #ff9800; }
+
+/* Sağ Panel (Sınıf Görünümü) */
+.classroom-panel { flex: 1; text-align: center; }
+.classroom-grid {
+    display: grid;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+.seat-box {
+    background: #f8f9fa;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.seat-number {
+    position: absolute; top: 5px; left: 8px; font-weight: bold; color: #999; font-size: 12px;
+}
+
+/* Renk Kodlaması */
+.soft-eng { background-color: #e3f2fd; border: 2px solid #2196f3; } /* Yazılım - Mavi */
+.comp-eng { background-color: #fff3e0; border: 2px solid #ff9800; } /* PC - Turuncu */
+
+.seat-student { text-align: center; }
+.seat-student span { display: block; font-weight: bold; font-size: 14px; margin-top: 5px; }
+.seat-student small { display: block; font-size: 11px; color: #555; }
+.empty-label { color: #ccc; }
+.no-plan-msg { margin-top: 50px; color: #999; font-style: italic; }
