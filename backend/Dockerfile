@@ -9,22 +9,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libjpeg-dev \
     zlib1g-dev \
     wget \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 RUN pip install --upgrade pip
 
+# requirements.txt ÖNCE (dlib/face_recognition HARİÇ)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ÖNEMLİ: Pre-compiled dlib wheel'i ÖNCE kur
-RUN wget https://github.com/sachadee/dlib/releases/download/v19.24.99/dlib-19.24.99-cp310-cp310-linux_x86_64.whl \
+# Pre-compiled dlib wheel - BUILD YOK, direkt kurulum
+RUN wget -q https://github.com/sachadee/dlib/releases/download/v19.24.99/dlib-19.24.99-cp310-cp310-linux_x86_64.whl \
     && pip install --no-cache-dir dlib-19.24.99-cp310-cp310-linux_x86_64.whl \
     && rm dlib-19.24.99-cp310-cp310-linux_x86_64.whl
 
-# face_recognition_models'ı kur
+# face_recognition - --no-deps ile (dlib tekrar inmesin!)
 RUN pip install --no-cache-dir face_recognition_models==0.3.0
-
-# face_recognition'ı --no-deps ile kur (dlib'i tekrar indirmesin!)
 RUN pip install --no-cache-dir --no-deps face_recognition==1.3.0
 
 COPY . .

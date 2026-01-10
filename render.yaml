@@ -1,2 +1,11 @@
-# examsec
-Exam security system for Final Project
+services:
+  - type: web
+    name: face-recognition-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.10"
