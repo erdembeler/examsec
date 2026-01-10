@@ -9,7 +9,7 @@ import {
 const StudentDashboard = () => {
   const studentName = localStorage.getItem('fullName') || "Öğrenci";
   const studentId = localStorage.getItem('userId') || "Bilinmiyor";
-  
+  const [loadingPhoto, setLoadingPhoto] = useState(true);
   const [activeExam, setActiveExam] = useState(null);
   const [referencePhoto, setReferencePhoto] = useState(null);
   const [livePhoto, setLivePhoto] = useState(null); 
@@ -20,15 +20,25 @@ const StudentDashboard = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
-  useEffect(() => {
+ useEffect(() => {
     const init = async () => {
-      try {
-        const exams = await api.getExams();
-        if (exams && exams.length > 0) setActiveExam(exams[0]); 
-      } catch (error) { console.error(error); }
+        try {
+            const exams = await api.getExams();
+            if (exams && exams.length > 0) setActiveExam(exams[0]);
+            if (studentId && studentId !== "Bilinmiyor") {
+                const photoData = await api.getStudentPhoto(studentId);
+                if (photoData && photoData.photo_url) {
+                    setReferencePhoto(photoData.photo_url);
+                }
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoadingPhoto(false);
+        }
     };
     init();
-  }, []);
+}, [studentId]);
 
   const handleReferenceUpload = () => {
     setReferencePhoto("https://randomuser.me/api/portraits/men/32.jpg");
@@ -144,15 +154,32 @@ const StudentDashboard = () => {
                 ) : (<p>Sınav yok.</p>)}
             </div>
 
-            <div className={`std-card upload-card ${referencePhoto ? 'completed' : ''}`}>
-                <h4><FaCamera/> Referans Fotoğraf</h4>
-                <div className="upload-area">
-                    {referencePhoto ? (
-                        <div className="preview-box"><img src={referencePhoto} alt="Ref"/><span className="verified-badge">Yüklendi</span></div>
-                    ) : (<div className="placeholder-box">Fotoğraf Yok</div>)}
-                </div>
-                {!referencePhoto && <button className="btn-upload" onClick={handleReferenceUpload}><FaUpload/> Yükle (Demo)</button>}
+            {/* REFERANS FOTOĞRAF BÖLÜMÜ */}
+<div className="reference-section">
+    <h3><FaIdCard /> Referans Fotoğrafınız</h3>
+    <p className="info-text">Üniversite kayıt fotoğrafınız</p>
+    
+    <div className="reference-photo-container">
+        {loadingPhoto ? (
+            <div className="photo-loading">
+                <FaSpinner className="spinner" />
+                <span>Yükleniyor...</span>
             </div>
+        ) : referencePhoto ? (
+            <img 
+                src={referencePhoto} 
+                alt="Referans Fotoğraf" 
+                className="reference-photo"
+            />
+        ) : (
+            <div className="no-photo">
+                <FaExclamationCircle />
+                <span>Fotoğraf bulunamadı</span>
+            </div>
+        )}
+    </div>
+</div>
+
         </div>
       </div>
 

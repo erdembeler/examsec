@@ -1,8 +1,5 @@
-// src/services/api.js
-
-// Proxy ayarı package.json'da olduğu için sadece /api yazmamız yeterli
-const API_URL = process.env.REACT_APP_API_URL || 'https://examsec.onrender.com/api';
-
+//const API_URL = process.env.REACT_APP_API_URL || 'https://examsec.onrender.com/api';
+REACT_APP_API_URL='http://localhost:5001/api'
 
 export const api = {
   // 1. GİRİŞ YAPMA
@@ -32,11 +29,7 @@ export const api = {
     const formData = new FormData();
     formData.append('exam_id', examId);
     formData.append('student_id', studentId);
-    // Blob verisini 'capture.jpg' adıyla dosyaya çevirip ekliyoruz
     formData.append('image', imageBlob, 'capture.jpg');
-
-    // Fetch ile FormData gönderirken 'Content-Type' header'ı YAZILMAZ.
-    // Tarayıcı bunu otomatik halleder.
     const response = await fetch(`${API_URL}/check-in`, {
       method: 'POST',
       body: formData
@@ -62,5 +55,11 @@ export const api = {
       body: JSON.stringify({ examId, studentId, note })
     });
     return response.json();
-  }
+  },
+  // 7. ÖĞRENCİ REFERANS FOTOĞRAFINI GETİR
+    getStudentPhoto: async (studentId) => {
+    const response = await fetch(`${API_URL}/student/${studentId}/photo`);
+    return response.json();
+},
+
 };

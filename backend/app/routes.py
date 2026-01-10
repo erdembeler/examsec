@@ -215,6 +215,7 @@ def run_face_check():
         if conn: 
             conn.close()
         gc.collect()
+        
 
 # --- 7. VIOLATION ---
 @main.route('/api/violation', methods=['POST'])
