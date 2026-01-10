@@ -25,6 +25,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- 1. LOGIN ---
+# --- 1. LOGIN ---
 @main.route('/api/login', methods=['POST'])
 def login():
     conn = None
@@ -32,18 +33,35 @@ def login():
         data = request.get_json()
         conn = get_db_connection()
         cur = conn.cursor()
+        
         cur.execute("SELECT id, role, password_hash FROM users WHERE username = %s", (data.get('username'),))
         user = cur.fetchone()
         
         if user and str(user[2]).strip() == str(data.get('password')).strip():
-            return jsonify({"success": True, "role": user[1], "userId": data.get('username')}), 200
+            response_data = {
+                "success": True, 
+                "role": user[1], 
+                "userId": data.get('username')
+            }
+            
+            # ✅ YENİ: Öğrenci ise ek bilgileri getir
+            if user[1] == 'student':
+                cur.execute("SELECT full_name, reference_photo FROM students WHERE user_id = %s", (user[0],))
+                student_info = cur.fetchone()
+                if student_info:
+                    response_data["fullName"] = student_info[0]
+                    response_data["referencePhoto"] = student_info[1]
+            
+            return jsonify(response_data), 200
+            
         return jsonify({"success": False, "message": "Hatalı şifre"}), 401
-    except Exception as e: 
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
-    finally: 
-        if conn: 
+    finally:
+        if conn:
             conn.close()
         gc.collect()
+
 
 # --- 2. GET EXAMS ---
 @main.route('/api/exams', methods=['GET'])

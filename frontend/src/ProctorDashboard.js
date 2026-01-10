@@ -13,7 +13,7 @@ const ProctorDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
-
+  const referencePhoto = localStorage.getItem('referencePhoto');
   const currentExamId = localStorage.getItem('currentExamId') || "1";
   const currentExamTitle = localStorage.getItem('currentExamTitle') || "Genel Sınav";
 

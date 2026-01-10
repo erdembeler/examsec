@@ -109,6 +109,9 @@ const InstructorDashboard = () => {
   const handleExamChange = async (e) => {
     const examId = e.target.value;
     setSelectedExamId(examId);
+    setIsExamStarted(false);
+    setIsExamFinished(false);
+  
     
     if (examId === "") {
         setStudentsInClass([]); 
@@ -255,7 +258,13 @@ const InstructorDashboard = () => {
                         ))}
                     </tbody>
                 </table>
-                <button className="btn-start" style={{marginTop:'20px'}} onClick={() => setIsExamFinished(false)}>Go Back</button>
+                <button className="btn-start" style={{marginTop:'20px'}} onClick={() => {
+  setIsExamFinished(false);
+  setIsExamStarted(false);  // ✅ Bunu ekle
+  setSelectedExamId("");     // ✅ Sınav seçimini de sıfırla
+  resetSeatingPlan();        // ✅ Oturma planını temizle
+}}
+>Go Back</button>
             </div>
         </div>
     );

@@ -62,6 +62,7 @@ const Login = () => {
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userRole', role);
         localStorage.setItem('userId', identifier);
+        localStorage.setItem('referencePhoto', response.referencePhoto || '')
 
         if (role === 'student') window.location.href = '/student/dashboard';
         else if (role === 'proctor') window.location.href = '/proctor/exams';
