@@ -59,7 +59,9 @@ const ProctorExams = () => {
                 <div key={exam.id} className="pe-card card-active">
                 
                 <div className="card-top">
-                    <span className="status-pill pill-green">🟢 Active</span>
+                    <span className={`exam-status ${exam.is_active ? 'active' : 'finished'}`}>
+      {exam.is_active ? '🟢 Aktif' : '🔴 Bitmiş'}
+    </span>
                     <span className="course-code">ID: {exam.id}</span>
                 </div>
                 

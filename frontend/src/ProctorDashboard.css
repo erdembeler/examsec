@@ -438,3 +438,228 @@ body {
 
 .btn-violation { background-color: #e74c3c; color: white; }
 .btn-violation:hover { background-color: #c0392b; }
+/* RAPOR SAYFASI */
+.proctor-report-wrapper {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  padding: 40px 20px;
+}
+
+.report-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: #1e1e2f;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.report-header {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #fff;
+}
+
+.report-header h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.report-header h2 {
+  font-size: 18px;
+  color: #888;
+  font-weight: normal;
+}
+
+/* İSTATİSTİK KUTULARI */
+.report-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.stat-box {
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-box.present { background: rgba(46, 213, 115, 0.15); border: 1px solid #2ed573; }
+.stat-box.pending { background: rgba(255, 193, 7, 0.15); border: 1px solid #ffc107; }
+.stat-box.violation { background: rgba(255, 71, 87, 0.15); border: 1px solid #ff4757; }
+.stat-box.absent { background: rgba(156, 156, 156, 0.15); border: 1px solid #9c9c9c; }
+
+.stat-number {
+  font-size: 32px;
+  font-weight: bold;
+  color: #000;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #491010;
+}
+
+/* TABLO */
+.report-table-container {
+  overflow-x: auto;
+  margin-bottom: 30px;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #000;
+}
+
+.report-table th,
+.report-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #333;
+}
+
+.report-table th {
+  background: #2a2a3e;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.report-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.row-violation {
+  background: rgba(255, 71, 87, 0.1);
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge.present { background: rgba(46, 213, 115, 0.2); color: #2ed573; }
+.status-badge.pending { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+.status-badge.violation { background: rgba(255, 71, 87, 0.2); color: #ff4757; }
+.status-badge.absent { background: rgba(156, 156, 156, 0.2); color: #9c9c9c; }
+
+/* GERİ BUTONU */
+.report-actions {
+  text-align: center;
+}
+
+.btn-back {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-back:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .report-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.report-header {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #fff;
+  position: relative;
+}
+
+.btn-pdf {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-pdf:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(255, 65, 108, 0.4);
+}
+
+/* Yazdırırken butonları gizle */
+@media print {
+  .btn-pdf, .btn-back {
+    display: none !important;
+  }
+  
+  .proctor-report-wrapper {
+    background: white !important;
+  }
+  
+  .report-container {
+    box-shadow: none !important;
+    background: white !important;
+  }
+  
+  .report-header, .stat-label, .report-table {
+    color: black !important;
+  }
+}
+.assigned-seat-info {
+  background: rgba(102, 126, 234, 0.15);
+  border: 1px solid #667eea;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.seat-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 14px;
+}
+.exam-card.finished {
+  opacity: 0.7;
+  border-left: 4px solid #888;
+}
+
+.exam-status.active {
+  color: #2ed573;
+}
+
+.exam-status.finished {
+  color: #888;
+}

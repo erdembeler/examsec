@@ -20,7 +20,18 @@ const InstructorDashboard = () => {
   const [isExamStarted, setIsExamStarted] = useState(false);
   const [isExamFinished, setIsExamFinished] = useState(false);
   const [selectedStudentForManual, setSelectedStudentForManual] = useState(null);
-  
+  // Sınav Oluşturma Modal
+const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+const [newExam, setNewExam] = useState({
+  title: '',
+  date: '',
+  time: '',
+  room_code: '',
+  code: '',
+  departments: [] 
+});
+const [creating, setCreating] = useState(false);
+
   // Polling (Sürekli Kontrol) için referans
   const pollingRef = useRef(null);
 
@@ -144,6 +155,47 @@ const InstructorDashboard = () => {
     }
     setSeatingPlan(plan);
   };
+const handleCreateExam = async (e) => {
+  e.preventDefault();
+  
+  if (!newExam.title || !newExam.date || !newExam.time) {
+    return alert('Lütfen zorunlu alanları doldurun!');
+  }
+  
+  if (newExam.departments.length === 0) {
+    return alert('En az bir bölüm seçmelisiniz!');
+  }
+
+  setCreating(true);
+  
+  try {
+    const dateTime = `${newExam.date}T${newExam.time}:00`;
+    
+    const response = await api.createExam({
+      title: newExam.title,
+      date: dateTime,
+      room_code: newExam.room_code,
+      code: newExam.code,
+      departments: newExam.departments.join(',')  // ✅ "0706,0704" formatında
+    });
+
+    if (response.success) {
+      alert('Sınav başarıyla oluşturuldu!');
+      setIsCreateModalOpen(false);
+      setNewExam({ title: '', date: '', time: '', room_code: '', code: '', departments: [] });
+      
+      const data = await api.getExams();
+      setExams(data);
+    } else {
+      alert('Hata: ' + (response.message || 'Sınav oluşturulamadı'));
+    }
+  } catch (error) {
+    console.error(error);
+    alert('Sunucu hatası!');
+  } finally {
+    setCreating(false);
+  }
+};
 
   // --- ALGORİTMALAR ---
   const handleRandomize = () => {
@@ -204,12 +256,62 @@ const InstructorDashboard = () => {
   };
 
   // SINAVI BAŞLAT (ARTIK RANDOM YOK!)
-  const handleStartExam = () => {
-    if (!selectedExamId) return alert("Please select an exam.");
+const handleStartExam = async () => {
+  if (!selectedExamId) return alert("Please select an exam.");
+  
+  // Oturma planından dolu koltukları al
+  const seats = seatingPlan
+    .filter(seat => seat.student)
+    .map(seat => ({
+      student_id: seat.student.id,
+      seat_code: seat.seatLabel
+    }));
+
+  if (seats.length === 0) {
+    return alert("Lütfen önce öğrencileri koltuklara yerleştirin!");
+  }
+
+  try {
+    // ✅ Önce oturma planını kaydet
+    const saveResponse = await api.saveSeatingPlan(selectedExamId, seats);
+    
+    if (!saveResponse.success) {
+      return alert("Oturma planı kaydedilemedi: " + saveResponse.message);
+    }
+    
+    console.log("✅ Oturma planı kaydedildi");
+    
+    // Sonra sınavı başlat
     setIsExamStarted(true);
-    // Burada setInterval YOK. useEffect'teki startPolling devreye girecek.
-    alert("Exam Monitoring Started. Waiting for live updates from students...");
-  };
+    alert("Sınav başlatıldı! Oturma planı kaydedildi.");
+    
+  } catch (error) {
+    console.error(error);
+    alert("Sunucu hatası!");
+  }
+};
+
+const handleFinishExam = async () => {
+  if (!window.confirm("Sınavı bitirmek istediğinize emin misiniz?")) return;
+  
+  try {
+    const response = await api.finishExam(selectedExamId);
+    
+    if (response.success) {
+      setIsExamFinished(true);
+      stopPolling();
+      
+      // Sınav listesini güncelle
+      const data = await api.getExams();
+      setExams(data);
+    } else {
+      alert("Hata: " + response.message);
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Sunucu hatası!");
+  }
+};
 
   const getStats = () => {
     let total = 0, present = 0, absent = 0, violations = 0;
@@ -279,8 +381,12 @@ const InstructorDashboard = () => {
                 <h2>Instructor Dashboard</h2>
                 <p>Exam Configuration Panel</p>
             </div>
+                <button className="btn-create-exam" onClick={() => setIsCreateModalOpen(true)}>
+      <FaBookOpen /> Sınav Oluştur
+    </button>
         </div>
         <div className="header-right">
+            
             {!isExamStarted ? (
                 <button className="btn-start" onClick={handleStartExam}><FaSave /> Start Exam Monitor</button>
             ) : (
@@ -288,9 +394,10 @@ const InstructorDashboard = () => {
                     <span style={{color:'#2ecc71', fontWeight:'bold', fontSize:'14px', display:'flex', alignItems:'center', gap:'5px'}}>
                         <FaSync className="fa-spin"/> Live
                     </span>
-                    <button className="btn-finish" onClick={() => {if(window.confirm("Finish exam session?")) setIsExamFinished(true)}}>
-                        <FaChartBar /> Finish Exam
-                    </button>
+                    <button className="btn-finish" onClick={handleFinishExam}>
+  <FaChartBar /> Finish Exam
+</button>
+
                 </div>
             )}
             <button className="btn-logout-header" onClick={() => window.location.href='/'}>
@@ -308,17 +415,15 @@ const InstructorDashboard = () => {
                 {loading ? (
                     <div style={{color:'#666'}}><FaSpinner className="fa-spin"/> Loading data...</div>
                 ) : (
-                    <select 
-                        value={selectedExamId} 
-                        onChange={handleExamChange}
-                        disabled={isExamStarted}
-                        style={{width:'100%', padding:'10px', borderRadius:'6px', border:'1px solid #0056b3', fontWeight:'bold'}}
-                    >
-                        <option value="">-- Choose an Exam --</option>
-                        {Array.isArray(exams) && exams.map(exam => (
-                            <option key={exam.id} value={exam.id}>{exam.title} ({exam.room_code})</option>
-                        ))}
-                    </select>
+                    <select value={selectedExamId} onChange={handleExamChange}>
+  <option value="">-- Sınav Seçin --</option>
+  {exams.map(exam => (
+    <option key={exam.id} value={exam.id}>
+      {exam.title} {exam.is_active ? '🟢' : '🔴 (Bitmiş)'}
+    </option>
+  ))}
+</select>
+
                 )}
             </div>
 
@@ -367,6 +472,117 @@ const InstructorDashboard = () => {
                 )}
             </div>
         </div>
+{/* SINAV OLUŞTURMA MODAL */}
+{isCreateModalOpen && (
+  <div className="modal-overlay">
+    <div className="modal-content">
+      <div className="modal-header">
+        <h2><FaBookOpen /> Yeni Sınav Oluştur</h2>
+        <button className="btn-close" onClick={() => setIsCreateModalOpen(false)}>
+          ✕
+        </button>
+      </div>
+      
+      <form onSubmit={handleCreateExam} className="exam-form">
+        <div className="form-group">
+          <label>Sınav Adı *</label>
+          <input
+            type="text"
+            placeholder="Örn: Yazılım Mühendisliği Final"
+            value={newExam.title}
+            onChange={(e) => setNewExam({...newExam, title: e.target.value})}
+            required
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Tarih *</label>
+            <input
+              type="date"
+              value={newExam.date}
+              onChange={(e) => setNewExam({...newExam, date: e.target.value})}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Saat *</label>
+            <input
+              type="time"
+              value={newExam.time}
+              onChange={(e) => setNewExam({...newExam, time: e.target.value})}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Sınıf/Salon</label>
+            <input
+              type="text"
+              placeholder="Örn: D-201"
+              value={newExam.room_code}
+              onChange={(e) => setNewExam({...newExam, room_code: e.target.value})}
+            />
+          </div>
+          <div className="form-group">
+            <label>Sınav Kodu</label>
+            <input
+              type="text"
+              placeholder="Örn: SWE301"
+              value={newExam.code}
+              onChange={(e) => setNewExam({...newExam, code: e.target.value})}
+            />
+          </div>
+        </div>
+        <div className="form-group">
+  <label>Bölümler *</label>
+  <div className="checkbox-group">
+    <label className="checkbox-item">
+      <input
+        type="checkbox"
+        checked={newExam.departments.includes('0706')}
+        onChange={(e) => {
+          if (e.target.checked) {
+            setNewExam({...newExam, departments: [...newExam.departments, '0706']});
+          } else {
+            setNewExam({...newExam, departments: newExam.departments.filter(d => d !== '0706')});
+          }
+        }}
+      />
+      <span>Yazılım Mühendisliği (0706)</span>
+    </label>
+    <label className="checkbox-item">
+      <input
+        type="checkbox"
+        checked={newExam.departments.includes('0704')}
+        onChange={(e) => {
+          if (e.target.checked) {
+            setNewExam({...newExam, departments: [...newExam.departments, '0704']});
+          } else {
+            setNewExam({...newExam, departments: newExam.departments.filter(d => d !== '0704')});
+          }
+        }}
+      />
+      <span>Bilgisayar Mühendisliği (0704)</span>
+    </label>
+  </div>
+</div>
+
+
+        <div className="form-actions">
+          <button type="button" className="btn-cancel" onClick={() => setIsCreateModalOpen(false)}>
+            İptal
+          </button>
+          <button type="submit" className="btn-submit" disabled={creating}>
+            {creating ? <><FaSpinner className="fa-spin" /> Oluşturuluyor...</> : 'Sınav Oluştur'}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
 
         {/* SINIF PLANI */}
         <div className="panel classroom-panel">

@@ -9,6 +9,7 @@ import {
 const ProctorDashboard = () => {
   const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
   const [students, setStudents] = useState([]);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -24,6 +25,10 @@ const ProctorDashboard = () => {
     pollingRef.current = setInterval(fetchData, 3000);
     return () => clearInterval(pollingRef.current);
   }, []);
+
+  const handlePrint = () => {
+  window.print();
+};
 
   const fetchData = async () => {
     try {
@@ -89,26 +94,98 @@ const ProctorDashboard = () => {
      alert("Manual approvement logic here.");
   };
 
-  const handleGetReport = () => {
-    const violations = students.filter(s => s.status === 'violation');
-    let report = `EXAM REPORT: ${currentExamTitle}\n\n`;
-    report += `Total Students: ${students.length}\n`;
-    report += `Verified: ${students.filter(s => s.status === 'present').length}\n`;
-    report += `Violations: ${violations.length}\n\n`;
-    
-    if (violations.length > 0) {
-        report += "--- VIOLATION DETAILS ---\n";
-        violations.forEach(v => {
-            report += `[${v.id}] ${v.name}: ${v.violation_note || 'No details'}\n`;
-        });
-    } else {
-        report += "No violations detected.";
-    }
-    
-    alert(report);
-  };
+const handleGetReport = () => {
+  setIsReportOpen(true);
+};
+
+// --- RAPOR EKRANI ---
+if (isReportOpen) {
+  const presentStudents = students.filter(s => s.status === 'present');
+  const pendingStudents = students.filter(s => s.status === 'pending');
+  const violationStudents = students.filter(s => s.status === 'violation');
+  const absentStudents = students.filter(s => s.status === 'absent' || !s.status);
 
   return (
+    <div className="proctor-report-wrapper">
+      <div className="report-container">
+        <header className="report-header">
+  <h1><FaFileAlt /> Sınav Raporu</h1>
+  <h2>{currentExamTitle}</h2>
+  
+  {/* ✅ YAZDIR BUTONU */}
+  <button className="btn-pdf" onClick={handlePrint}>
+    <FaFileAlt /> PDF Kaydet
+  </button>
+</header>
+
+
+        {/* İSTATİSTİKLER */}
+        <div className="report-stats">
+          <div className="stat-box present">
+            <span className="stat-number">{presentStudents.length}</span>
+            <span className="stat-label">✅ Onaylı</span>
+          </div>
+          <div className="stat-box pending">
+            <span className="stat-number">{pendingStudents.length}</span>
+            <span className="stat-label">⏳ Bekleyen</span>
+          </div>
+          <div className="stat-box violation">
+            <span className="stat-number">{violationStudents.length}</span>
+            <span className="stat-label">⚠️ İhlal</span>
+          </div>
+          <div className="stat-box absent">
+            <span className="stat-number">{absentStudents.length}</span>
+            <span className="stat-label">❌ Gelmedi</span>
+          </div>
+        </div>
+
+        {/* ÖĞRENCİ TABLOSU */}
+        <div className="report-table-container">
+          <table className="report-table">
+            <thead>
+              <tr>
+                <th>Öğrenci No</th>
+                <th>Ad Soyad</th>
+                <th>Bölüm</th>
+                <th>Durum</th>
+                <th>Not</th>
+              </tr>
+            </thead>
+            <tbody>
+              {students.map(student => (
+                <tr key={student.id} className={`row-${student.status || 'absent'}`}>
+                  <td>{student.id}</td>
+                  <td>{student.name}</td>
+                  <td>{student.dept === '0706' ? 'Yazılım' : 'Bilgisayar'}</td>
+                  
+                  <td>
+                    <span className={`status-badge ${student.status || 'absent'}`}>
+                      {student.status === 'present' && '✅ Onaylı'}
+                      {student.status === 'pending' && '⏳ Bekliyor'}
+                      {student.status === 'violation' && '⚠️ İhlal'}
+                      {(!student.status || student.status === 'absent') && '❌ Gelmedi'}
+                    </span>
+                  </td>
+                  <td>{student.violation_note || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* GERİ BUTONU */}
+        <div className="report-actions">
+          <button className="btn-back" onClick={() => setIsReportOpen(false)}>
+            <FaSignOutAlt /> Panele Dön
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+  return (
+    
     <div className="dashboard-layout">
       
       {/* SOL PANEL */}
@@ -205,14 +282,24 @@ const ProctorDashboard = () => {
             </div>
 
             <div className="student-details-bar">
-                 <h3>{selectedStudent.name}</h3>
-                 <p>{selectedStudent.id} - {selectedStudent.dept === '0706' ? 'Software' : 'Computer'}</p>
-                 {selectedStudent.violation_note && (
-                     <div className="violation-alert">
-                        <FaExclamationTriangle/> {selectedStudent.violation_note}
-                     </div>
-                 )}
-            </div>
+     <h3>{selectedStudent.name}</h3>
+     <p>{selectedStudent.id} - {selectedStudent.dept === '0706' ? 'Software' : 'Computer'}</p>
+     
+     {/* ✅ YENİ: Atanan Koltuk */}
+     <div className="assigned-seat-info">
+        <strong>📍 Atanan Koltuk:</strong> 
+        <span className="seat-badge">
+          {selectedStudent.assigned_seat || 'Atanmamış'}
+        </span>
+     </div>
+     
+     {selectedStudent.violation_note && (
+         <div className="violation-alert">
+            <FaExclamationTriangle/> {selectedStudent.violation_note}
+         </div>
+     )}
+</div>
+
 
             <div className="action-bar">
                 <button className="btn-approve" onClick={() => alert("Manual Verify Logic")}>

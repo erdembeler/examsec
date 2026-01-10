@@ -3,15 +3,15 @@ export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/a
 
 export const api = {
   // 1. GİRİŞ YAPMA
-  login: async (username, password) => {
-    const response = await fetch(`${API_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    return response.json();
-  },
-  
+login: async (username, password, role) => {
+  const response = await fetch(`${API_URL}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, role })  // ✅ role ekle
+  });
+  return response.json();
+},
+
   // 2. SINAVLARI GETİR
   getExams: async () => {
     const response = await fetch(`${API_URL}/exams`);
@@ -60,6 +60,44 @@ export const api = {
     getStudentPhoto: async (studentId) => {
     const response = await fetch(`${API_URL}/student/${studentId}/photo`);
     return response.json();
+},
+// 8. SINAV OLUŞTUR
+createExam: async (examData) => {
+  const response = await fetch(`${API_URL}/exams`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(examData)
+  });
+  return response.json();
+},
+
+// 9. OTURMA PLANI KAYDET
+saveSeatingPlan: async (examId, seats) => {
+  const response = await fetch(`${API_URL}/exam/${examId}/seating`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ seats })
+  });
+  return response.json();
+},
+
+// 10. OTURMA PLANINI GETİR
+getSeatingPlan: async (examId) => {
+  const response = await fetch(`${API_URL}/exam/${examId}/seating`);
+  return response.json();
+},
+// 11. SINAVI BİTİR
+finishExam: async (examId) => {
+  const response = await fetch(`${API_URL}/exam/${examId}/finish`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  return response.json();
+},
+// 12. ÖĞRENCİNİN SINAVLARINI GETİR
+getStudentExams: async (studentId) => {
+  const response = await fetch(`${API_URL}/student/${studentId}/exams`);
+  return response.json();
 },
 
 };

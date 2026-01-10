@@ -24,17 +24,24 @@ const StudentDashboard = () => {
   const canvasRef = useRef(null);
 
   // ✅ Sadece sınavları çek, fotoğraf localStorage'dan geliyor
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const exams = await api.getExams();
-        if (exams && exams.length > 0) setActiveExam(exams[0]);
-      } catch (error) {
-        console.error(error);
+useEffect(() => {
+  const init = async () => {
+    try {
+      // ✅ Sadece bu öğrencinin kayıtlı olduğu aktif sınavları getir
+      const exams = await api.getStudentExams(studentId);
+      
+      if (exams && exams.length > 0) {
+        setActiveExam(exams[0]);
+      } else {
+        setActiveExam(null);
       }
-    };
-    init();
-  }, []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  init();
+}, [studentId]);
+
 
   const openCamera = () => {
     setIsCameraOpen(true);

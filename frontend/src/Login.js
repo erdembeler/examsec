@@ -11,7 +11,6 @@ const Login = () => {
   const [role, setRole] = useState('student'); 
   const [identifier, setIdentifier] = useState('220706011'); 
   const [password, setPassword] = useState('123');
-  
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,7 +55,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await api.login(identifier, password);
+      const response = await api.login(identifier, password, role);
 
       if (response.success) {
         localStorage.setItem('isLoggedIn', 'true');

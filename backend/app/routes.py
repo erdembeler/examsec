@@ -25,36 +25,46 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # --- 1. LOGIN ---
-# --- 1. LOGIN ---
 @main.route('/api/login', methods=['POST'])
 def login():
     conn = None
     try:
         data = request.get_json()
+        requested_role = data.get('role')  # ✅ Frontend'den gelen rol
+        
         conn = get_db_connection()
         cur = conn.cursor()
         
         cur.execute("SELECT id, role, password_hash FROM users WHERE username = %s", (data.get('username'),))
         user = cur.fetchone()
         
-        if user and str(user[2]).strip() == str(data.get('password')).strip():
-            response_data = {
-                "success": True, 
-                "role": user[1], 
-                "userId": data.get('username')
-            }
-            
-            # ✅ YENİ: Öğrenci ise ek bilgileri getir
-            if user[1] == 'student':
-                cur.execute("SELECT full_name, reference_photo FROM students WHERE user_id = %s", (user[0],))
-                student_info = cur.fetchone()
-                if student_info:
-                    response_data["fullName"] = student_info[0]
-                    response_data["referencePhoto"] = student_info[1]
-            
-            return jsonify(response_data), 200
-            
-        return jsonify({"success": False, "message": "Hatalı şifre"}), 401
+        if not user:
+            return jsonify({"success": False, "message": "Kullanıcı bulunamadı"}), 401
+        
+        # Şifre kontrolü
+        if str(user[2]).strip() != str(data.get('password')).strip():
+            return jsonify({"success": False, "message": "Hatalı şifre"}), 401
+        
+        # ✅ Rol kontrolü
+        if user[1] != requested_role:
+            return jsonify({"success": False, "message": f"Bu hesap {user[1]} rolünde, {requested_role} olarak giriş yapamazsınız"}), 403
+        
+        response_data = {
+            "success": True, 
+            "role": user[1], 
+            "userId": data.get('username')
+        }
+        
+        # Öğrenci ise ek bilgileri getir
+        if user[1] == 'student':
+            cur.execute("SELECT full_name, reference_photo FROM students WHERE user_id = %s", (user[0],))
+            student_info = cur.fetchone()
+            if student_info:
+                response_data["fullName"] = student_info[0]
+                response_data["referencePhoto"] = student_info[1]
+        
+        return jsonify(response_data), 200
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
@@ -70,13 +80,21 @@ def get_exams():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT id, title, room_code, date, code FROM exams ORDER BY date DESC")
+        cur.execute("SELECT id, title, room_code, date, code, departments, is_active FROM exams ORDER BY date DESC")
         rows = cur.fetchall()
-        return jsonify([{"id": r[0], "title": r[1], "room_code": r[2], "date": r[3], "code": r[4]} for r in rows]), 200
-    except Exception as e: 
+        return jsonify([{
+            "id": r[0], 
+            "title": r[1], 
+            "room_code": r[2], 
+            "date": r[3], 
+            "code": r[4],
+            "departments": r[5],
+            "is_active": r[6]  # ✅ YENİ
+        } for r in rows]), 200
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
-    finally: 
-        if conn: 
+    finally:
+        if conn:
             conn.close()
         gc.collect()
 
@@ -87,11 +105,15 @@ def get_exam_students(exam_id):
     try:
         conn = get_db_connection()
         cur = conn.cursor()
+        
         query = """
-            SELECT s.user_id, u.username, s.full_name, s.department, e.status, e.photo_url, s.reference_photo, e.violation_note
+            SELECT s.user_id, u.username, s.full_name, s.department, 
+                   e.status, e.photo_url, s.reference_photo, e.violation_note,
+                   sp.seat_code
             FROM students s
             JOIN users u ON s.user_id = u.id
             JOIN enrollments e ON s.user_id = e.student_id
+            LEFT JOIN seating_plans sp ON sp.student_id = s.user_id AND sp.exam_id = e.exam_id
             WHERE e.exam_id = %s
             ORDER BY s.full_name ASC;
         """
@@ -107,13 +129,15 @@ def get_exam_students(exam_id):
                 "status": row[4],
                 "photo_url": row[5],
                 "reference_photo": row[6],
-                "violation_note": row[7]
+                "violation_note": row[7],
+                "assigned_seat": row[8]  # ✅ YENİ
             })
+        
         return jsonify(students), 200
-    except Exception as e: 
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
-    finally: 
-        if conn: 
+    finally:
+        if conn:
             conn.close()
         gc.collect()
 
@@ -259,5 +283,169 @@ def add_violation():
         return jsonify({"error": str(e)}), 500
     finally:
         if conn: 
+            conn.close()
+        gc.collect()
+
+# --- 8. SINAV OLUŞTUR ---
+@main.route('/api/exams', methods=['POST'])
+def create_exam():
+    conn = None
+    try:
+        data = request.get_json()
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Sınavı oluştur
+        cur.execute(
+            "INSERT INTO exams (title, date, room_code, code, departments) VALUES (%s, %s, %s, %s, %s) RETURNING id",
+            (data.get('title'), data.get('date'), data.get('room_code'), data.get('code'), data.get('departments'))
+        )
+        
+        new_exam_id = cur.fetchone()[0]
+        
+       
+        departments = data.get('departments', '').split(',')
+        if departments:
+            placeholders = ','.join(['%s'] * len(departments))
+            cur.execute(f"SELECT user_id FROM students WHERE department IN ({placeholders})", tuple(departments))
+            student_ids = cur.fetchall()
+            
+            for (student_id,) in student_ids:
+                cur.execute(
+                    "INSERT INTO enrollments (exam_id, student_id, status) VALUES (%s, %s, 'absent')",
+                    (new_exam_id, student_id)
+                )
+        
+        conn.commit()
+        
+        return jsonify({"success": True, "id": new_exam_id, "message": "Sınav oluşturuldu"}), 201
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+        gc.collect()
+
+
+# --- 9. OTURMA PLANI KAYDET ---
+@main.route('/api/exam/<int:exam_id>/seating', methods=['POST'])
+def save_seating_plan(exam_id):
+    conn = None
+    try:
+        data = request.get_json()
+        seats = data.get('seats', [])  # [{student_id: "220706011", seat_code: "A-1"}, ...]
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Önce bu sınavın eski planını sil
+        cur.execute("DELETE FROM seating_plans WHERE exam_id = %s", (exam_id,))
+        
+        # Yeni planı ekle
+        for seat in seats:
+            if seat.get('student_id') and seat.get('seat_code'):
+                # student_id username olarak geliyor, user_id'ye çevir
+                cur.execute("SELECT id FROM users WHERE username = %s", (seat['student_id'],))
+                user = cur.fetchone()
+                if user:
+                    cur.execute(
+                        "INSERT INTO seating_plans (exam_id, student_id, seat_code) VALUES (%s, %s, %s)",
+                        (exam_id, user[0], seat['seat_code'])
+                    )
+        
+        conn.commit()
+        return jsonify({"success": True, "message": "Oturma planı kaydedildi"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+        gc.collect()
+
+
+# --- 10. OTURMA PLANINI GETİR ---
+@main.route('/api/exam/<int:exam_id>/seating', methods=['GET'])
+def get_seating_plan(exam_id):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("""
+            SELECT u.username, sp.seat_code 
+            FROM seating_plans sp
+            JOIN users u ON sp.student_id = u.id
+            WHERE sp.exam_id = %s
+        """, (exam_id,))
+        
+        rows = cur.fetchall()
+        seats = [{"student_id": row[0], "seat_code": row[1]} for row in rows]
+        
+        return jsonify(seats), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+        gc.collect()
+
+# --- 11. SINAVI BİTİR ---
+@main.route('/api/exam/<int:exam_id>/finish', methods=['POST'])
+def finish_exam(exam_id):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("UPDATE exams SET is_active = false WHERE id = %s", (exam_id,))
+        conn.commit()
+        
+        return jsonify({"success": True, "message": "Sınav bitirildi"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+        gc.collect()
+
+# --- 12. ÖĞRENCİNİN SINAVLARINI GETİR ---
+@main.route('/api/student/<string:student_id>/exams', methods=['GET'])
+def get_student_exams(student_id):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Öğrencinin user_id'sini bul
+        cur.execute("SELECT id FROM users WHERE username = %s", (student_id,))
+        user = cur.fetchone()
+        
+        if not user:
+            return jsonify([]), 200
+        
+        # Öğrencinin kayıtlı olduğu sınavları getir
+        cur.execute("""
+            SELECT e.id, e.title, e.room_code, e.date, e.code, e.is_active
+            FROM exams e
+            JOIN enrollments en ON e.id = en.exam_id
+            WHERE en.student_id = %s AND e.is_active = true
+            ORDER BY e.date DESC
+        """, (user[0],))
+        
+        rows = cur.fetchall()
+        exams = [{
+            "id": r[0],
+            "title": r[1],
+            "room_code": r[2],
+            "date": r[3],
+            "code": r[4],
+            "is_active": r[5]
+        } for r in rows]
+        
+        return jsonify(exams), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
             conn.close()
         gc.collect()
