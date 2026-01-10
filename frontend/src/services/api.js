@@ -1,5 +1,5 @@
 //const API_URL = process.env.REACT_APP_API_URL || 'https://examsec.onrender.com/api';
-REACT_APP_API_URL='http://localhost:5001/api'
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001/api'
 
 export const api = {
   // 1. GİRİŞ YAPMA
