@@ -1,0 +1,636 @@
+/* =============================================
+   ANIMATIONS - Dark Glassmorphism Theme
+   ============================================= */
+
+/* =========================================
+   1. KEYFRAMES
+   ========================================= */
+
+/* Fade In */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Fade In Up */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade In Down */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade In Left */
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Fade In Right */
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Scale In */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Bounce In */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Pulse */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Pulse Glow */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+  }
+}
+
+/* Pulse Ring */
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Float */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Shake */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Spin */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Gradient Shift (Background) */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Shimmer (Loading) */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Ripple */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Slide In From Bottom */
+@keyframes slideInBottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Glow Pulse */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(139, 92, 246, 0.5),
+                0 0 10px rgba(139, 92, 246, 0.3),
+                0 0 15px rgba(139, 92, 246, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.8),
+                0 0 20px rgba(139, 92, 246, 0.5),
+                0 0 30px rgba(139, 92, 246, 0.3);
+  }
+}
+
+/* Border Glow */
+@keyframes borderGlow {
+  0%, 100% {
+    border-color: rgba(139, 92, 246, 0.3);
+  }
+  50% {
+    border-color: rgba(139, 92, 246, 0.8);
+  }
+}
+
+/* =========================================
+   2. UTILITY CLASSES
+   ========================================= */
+
+/* Fade Animations */
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.animate-fadeInDown {
+  animation: fadeInDown 0.5s ease forwards;
+}
+
+.animate-fadeInLeft {
+  animation: fadeInLeft 0.5s ease forwards;
+}
+
+.animate-fadeInRight {
+  animation: fadeInRight 0.5s ease forwards;
+}
+
+/* Scale & Bounce */
+.animate-scaleIn {
+  animation: scaleIn 0.4s ease forwards;
+}
+
+.animate-bounceIn {
+  animation: bounceIn 0.6s ease forwards;
+}
+
+/* Continuous Animations */
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-glow {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* Delay Utilities */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+
+/* =========================================
+   3. COMPONENT ANIMATIONS
+   ========================================= */
+
+/* === HEADER === */
+.inst-header,
+.proctor-header,
+.pe-header,
+.admin-header {
+  animation: fadeInDown 0.5s ease;
+}
+
+/* === PANELS === */
+.panel,
+.pe-card,
+.stat-card,
+.stat-box,
+.verification-panel {
+  animation: fadeInUp 0.5s ease backwards;
+}
+
+/* Staggered Panel Animation */
+.panel:nth-child(1) { animation-delay: 0.1s; }
+.panel:nth-child(2) { animation-delay: 0.2s; }
+.panel:nth-child(3) { animation-delay: 0.3s; }
+
+/* === CARDS === */
+.pe-card,
+.stat-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pe-card:hover,
+.stat-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Staggered Card Animation */
+.pe-card:nth-child(1) { animation-delay: 0.1s; }
+.pe-card:nth-child(2) { animation-delay: 0.15s; }
+.pe-card:nth-child(3) { animation-delay: 0.2s; }
+.pe-card:nth-child(4) { animation-delay: 0.25s; }
+.pe-card:nth-child(5) { animation-delay: 0.3s; }
+.pe-card:nth-child(6) { animation-delay: 0.35s; }
+
+/* === BUTTONS === */
+.btn-create-exam,
+.btn-start,
+.btn-finish,
+.btn-action,
+.btn-action-card,
+.btn-approve,
+.btn-violation,
+.btn-submit,
+.btn-ai-check {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Button Hover Lift */
+.btn-create-exam:hover,
+.btn-start:hover,
+.btn-action-card:hover,
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-3px);
+}
+
+/* Button Active Press */
+.btn-create-exam:active,
+.btn-start:active,
+.btn-action-card:active,
+.btn-submit:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+/* Ripple Effect */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.3) 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10, 10);
+  opacity: 0;
+  transition: transform 0.5s, opacity 0.5s;
+}
+
+.btn-ripple:active::after {
+  transform: scale(0, 0);
+  opacity: 0.3;
+  transition: 0s;
+}
+
+/* === SEAT BOXES === */
+.seat-box {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.seat-box:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.seat-box.occupied:hover {
+  border-color: var(--accent-primary);
+}
+
+/* === LIVE INDICATORS === */
+.live-status.active::before,
+.status-dot.online {
+  animation: pulse 2s infinite;
+}
+
+/* Online Status Ring Effect */
+.status-dot.online {
+  position: relative;
+}
+
+.status-dot.online::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  transform: translate(-50%, -50%);
+  animation: pulseRing 1.5s ease-out infinite;
+}
+
+/* === STUDENT ITEMS === */
+.student-item,
+.pool-item {
+  transition: all 0.2s ease;
+}
+
+.student-item:hover,
+.pool-item:hover {
+  transform: translateX(5px);
+}
+
+/* === MODALS === */
+.modal-overlay {
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content,
+.student-modal-content {
+  animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* === SIDEBAR === */
+.sidebar-list {
+  animation: fadeInLeft 0.4s ease;
+}
+
+/* === LOADING STATES === */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+/* Loading Spinner */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(139, 92, 246, 0.2);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* === BADGES === */
+.badge,
+.live-badge,
+.status-badge {
+  transition: all 0.2s ease;
+}
+
+.badge.danger,
+.live-badge.violation {
+  animation: pulse 1.5s infinite;
+}
+
+/* === ICON ANIMATIONS === */
+.icon-box {
+  transition: all 0.3s ease;
+}
+
+.icon-box:hover {
+  transform: rotate(-5deg) scale(1.1);
+}
+
+/* === FLOATING BACKGROUND ELEMENTS === */
+.floating-bg {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.floating-bg .orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: float 6s ease-in-out infinite;
+}
+
+.floating-bg .orb-1 {
+  width: 400px;
+  height: 400px;
+  background: rgba(139, 92, 246, 0.15);
+  top: -100px;
+  left: -100px;
+  animation-delay: 0s;
+}
+
+.floating-bg .orb-2 {
+  width: 300px;
+  height: 300px;
+  background: rgba(6, 182, 212, 0.1);
+  bottom: -50px;
+  right: -50px;
+  animation-delay: 2s;
+}
+.floating-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.floating-bg .orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Mor orb - sol üst */
+.floating-bg .orb-1 {
+  width: 400px;
+  height: 400px;
+  background: rgba(139, 92, 246, 0.15);
+  top: -100px;
+  left: -100px;
+}
+
+/* Cyan orb - sağ alt */
+.floating-bg .orb-2 {
+  width: 300px;
+  height: 300px;
+  background: rgba(6, 182, 212, 0.12);
+  bottom: -50px;
+  right: -50px;
+  animation-delay: 2s;
+}
+
+/* Pembe orb - ortada */
+.floating-bg .orb-3 {
+  width: 200px;
+  height: 200px;
+  background: rgba(236, 72, 153, 0.1);
+  top: 50%;
+  left: 60%;
+  animation-delay: 4s;
+}
+
+.floating-bg .orb-3 {
+  width: 200px;
+  height: 200px;
+  background: rgba(236, 72, 153, 0.08);
+  top: 50%;
+  left: 50%;
+  animation-delay: 4s;
+}
+
+/* === NOTIFICATION TOAST === */
+.toast {
+  animation: slideInBottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toast.exit {
+  animation: fadeInDown 0.3s ease reverse forwards;
+}
+
+/* === FOCUS GLOW === */
+input:focus,
+select:focus,
+textarea:focus {
+  animation: borderGlow 2s ease-in-out infinite;
+}
+
+/* === TABLE ROW ANIMATIONS === */
+.report-table tbody tr {
+  animation: fadeInUp 0.3s ease backwards;
+}
+
+.report-table tbody tr:nth-child(1) { animation-delay: 0.05s; }
+.report-table tbody tr:nth-child(2) { animation-delay: 0.1s; }
+.report-table tbody tr:nth-child(3) { animation-delay: 0.15s; }
+.report-table tbody tr:nth-child(4) { animation-delay: 0.2s; }
+.report-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
+
+/* === VIOLATION ALERT === */
+.violation-alert,
+.seat-box.status-violation {
+  animation: shake 0.5s ease, pulseGlow 2s ease-in-out infinite;
+}
+
+/* =========================================
+   4. REDUCED MOTION
+   ========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

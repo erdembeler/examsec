@@ -117,30 +117,79 @@ const [creating, setCreating] = useState(false);
   };
 
   // 3. SINAV SEÇİLİNCE
-  const handleExamChange = async (e) => {
-    const examId = e.target.value;
-    setSelectedExamId(examId);
-    setIsExamStarted(false);
-    setIsExamFinished(false);
-  
+// 3. SINAV SEÇİLİNCE
+const handleExamChange = async (e) => {
+  const examId = e.target.value;
+  setSelectedExamId(examId);
+  setIsExamStarted(false);
+  setIsExamFinished(false);
+
+  if (examId === "") {
+    setStudentsInClass([]);
+    resetSeatingPlan();
+    return;
+  }
+
+  try {
+    setLoading(true);
+    const students = await api.getExamStudents(examId);
+    setStudentsInClass(students);
+
+    // ✅ Sınavın durumunu kontrol et
+    const selectedExam = exams.find(ex => String(ex.id) === examId);
     
-    if (examId === "") {
-        setStudentsInClass([]); 
-        resetSeatingPlan();
-        return;
+    // ✅ Backend'den kayıtlı oturma planını al
+    const savedSeating = await api.getSeatingPlan(examId);
+    
+    if (savedSeating && savedSeating.length > 0) {
+      // ✅ Kayıtlı plan varsa, onu yükle
+      loadSavedSeatingPlan(students, savedSeating);
+      
+      // Sınav aktif değilse (bitmiş) işaretle
+      if (selectedExam && !selectedExam.is_active) {
+        setIsExamFinished(true);
+      }
+    } else {
+      // Kayıtlı plan yoksa boş grid göster
+      resetSeatingPlan();
     }
 
-    try {
-        setLoading(true);
-        const students = await api.getExamStudents(examId);
-        setStudentsInClass(students);
-        resetSeatingPlan(); 
-    } catch (err) {
-        console.error("Failed to fetch student list:", err);
-    } finally {
-        setLoading(false);
+  } catch (err) {
+    console.error("Failed to fetch student list:", err);
+    resetSeatingPlan();
+  } finally {
+    setLoading(false);
+  }
+};
+
+// ✅ YENİ FONKSİYON: Kayıtlı oturma planını yükle
+const loadSavedSeatingPlan = (students, savedSeating) => {
+  let newPlan = [];
+  
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const seatLabel = `${String.fromCharCode(65 + r)}-${c + 1}`;
+      
+      // Bu koltuğa atanmış öğrenci var mı?
+      const seatAssignment = savedSeating.find(s => s.seat_code === seatLabel);
+      let studentForSeat = null;
+      
+      if (seatAssignment) {
+        // Öğrenciyi bul
+        studentForSeat = students.find(s => s.id === seatAssignment.student_id);
+      }
+      
+      newPlan.push({
+        id: `${r}-${c}`,
+        seatLabel: seatLabel,
+        student: studentForSeat || null
+      });
     }
-  };
+  }
+  
+  setSeatingPlan(newPlan);
+};
+
 
   const resetSeatingPlan = () => {
     let plan = [];
@@ -382,7 +431,7 @@ const handleFinishExam = async () => {
                 <p>Exam Configuration Panel</p>
             </div>
                 <button className="btn-create-exam" onClick={() => setIsCreateModalOpen(true)}>
-      <FaBookOpen /> Sınav Oluştur
+      <FaBookOpen /> Arrange an Exam
     </button>
         </div>
         <div className="header-right">
@@ -410,16 +459,16 @@ const handleFinishExam = async () => {
         
         {/* AYARLAR */}
         <div className="panel settings-panel">
-            <div className="form-group highlight-box" style={{background:'#f0f4ff', padding:'15px', borderRadius:'8px', border:'1px solid #d0e0ff'}}>
-                <label style={{color:'#0056b3'}}><FaBookOpen/> Select Active Exam</label>
+            <div className="form-group highlight-box" style={{background:'#4862a4', padding:'15px', borderRadius:'8px', border:'1px solid #f88383'}}>
+                <label style={{color:'#ffffff'}}><FaBookOpen/> Select Active Exam</label>
                 {loading ? (
-                    <div style={{color:'#666'}}><FaSpinner className="fa-spin"/> Loading data...</div>
+                    <div style={{color:'#ffffff'}}><FaSpinner className="fa-spin"/> Loading data...</div>
                 ) : (
                     <select value={selectedExamId} onChange={handleExamChange}>
-  <option value="">-- Sınav Seçin --</option>
+  <option value="">-- Choose an Exam --</option>
   {exams.map(exam => (
     <option key={exam.id} value={exam.id}>
-      {exam.title} {exam.is_active ? '🟢' : '🔴 (Bitmiş)'}
+      {exam.title} {exam.is_active ? '🟢' : '🔴 (Finished)'}
     </option>
   ))}
 </select>
@@ -477,7 +526,7 @@ const handleFinishExam = async () => {
   <div className="modal-overlay">
     <div className="modal-content">
       <div className="modal-header">
-        <h2><FaBookOpen /> Yeni Sınav Oluştur</h2>
+        <h2><FaBookOpen /> Arrange a New Exam</h2>
         <button className="btn-close" onClick={() => setIsCreateModalOpen(false)}>
           ✕
         </button>
@@ -485,10 +534,10 @@ const handleFinishExam = async () => {
       
       <form onSubmit={handleCreateExam} className="exam-form">
         <div className="form-group">
-          <label>Sınav Adı *</label>
+          <label>Exam Name *</label>
           <input
             type="text"
-            placeholder="Örn: Yazılım Mühendisliği Final"
+            placeholder="...... Midterm/Final Exam"
             value={newExam.title}
             onChange={(e) => setNewExam({...newExam, title: e.target.value})}
             required
@@ -497,7 +546,7 @@ const handleFinishExam = async () => {
 
         <div className="form-row">
           <div className="form-group">
-            <label>Tarih *</label>
+            <label>Date *</label>
             <input
               type="date"
               value={newExam.date}
@@ -506,7 +555,7 @@ const handleFinishExam = async () => {
             />
           </div>
           <div className="form-group">
-            <label>Saat *</label>
+            <label>Time *</label>
             <input
               type="time"
               value={newExam.time}
@@ -518,26 +567,26 @@ const handleFinishExam = async () => {
 
         <div className="form-row">
           <div className="form-group">
-            <label>Sınıf/Salon</label>
+            <label>Class/Saloon</label>
             <input
               type="text"
-              placeholder="Örn: D-201"
+              placeholder="Door Number"
               value={newExam.room_code}
               onChange={(e) => setNewExam({...newExam, room_code: e.target.value})}
             />
           </div>
           <div className="form-group">
-            <label>Sınav Kodu</label>
+            <label>Exam Code</label>
             <input
               type="text"
-              placeholder="Örn: SWE301"
+              placeholder="SWE301 etc."
               value={newExam.code}
               onChange={(e) => setNewExam({...newExam, code: e.target.value})}
             />
           </div>
         </div>
         <div className="form-group">
-  <label>Bölümler *</label>
+  <label>Institues *</label>
   <div className="checkbox-group">
     <label className="checkbox-item">
       <input
@@ -551,7 +600,7 @@ const handleFinishExam = async () => {
           }
         }}
       />
-      <span>Yazılım Mühendisliği (0706)</span>
+      <span>Software Engineering (0706)</span>
     </label>
     <label className="checkbox-item">
       <input
@@ -565,7 +614,7 @@ const handleFinishExam = async () => {
           }
         }}
       />
-      <span>Bilgisayar Mühendisliği (0704)</span>
+      <span>Computer Engineering (0704)</span>
     </label>
   </div>
 </div>
@@ -573,10 +622,10 @@ const handleFinishExam = async () => {
 
         <div className="form-actions">
           <button type="button" className="btn-cancel" onClick={() => setIsCreateModalOpen(false)}>
-            İptal
+            Cancel
           </button>
           <button type="submit" className="btn-submit" disabled={creating}>
-            {creating ? <><FaSpinner className="fa-spin" /> Oluşturuluyor...</> : 'Sınav Oluştur'}
+            {creating ? <><FaSpinner className="fa-spin" /> Arranging...</> : 'Arrange'}
           </button>
         </div>
       </form>

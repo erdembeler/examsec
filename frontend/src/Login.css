@@ -1,207 +1,231 @@
-/* Login.css */
+/* =============================================
+   LOGIN - DARK GLASSMORPHISM
+   ============================================= */
+
 .login-wrapper {
-    background: linear-gradient(135deg, #0061f2 0%, #6900c7 100%);
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Segoe UI', sans-serif;
-  }
-  
-  .login-container {
-    background-color: #ffffff;
-    width: 380px;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    text-align: center;
-  }
-  
-  .login-header {
-    margin-bottom: 30px;
-  }
-  
-  .icon-circle {
-    width: 60px;
-    height: 60px;
-    background-color: #e1f0ff;
-    color: #0061f2;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 24px;
-    margin: 0 auto 15px;
-  }
-  
-  .login-header h2 {
-    margin: 0;
-    color: #333;
-    font-size: 22px;
-  }
-  
-  .login-header p {
-    margin: 5px 0 0;
-    color: #777;
-    font-size: 14px;
-  }
-  
-  .input-group {
-    margin-bottom: 20px;
-    text-align: left;
-  }
-  
-  .input-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: #555;
-    font-weight: 600;
-    font-size: 14px;
-  }
-  
-  .input-field {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-  
-  .input-field .icon {
-    position: absolute;
-    left: 15px;
-    color: #aaa;
-    display: flex;
-  }
-  
-  .input-field input {
-    width: 100%;
-    padding: 12px 12px 12px 40px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 14px;
-    outline: none;
-    transition: border 0.3s;
-  }
-  
-  .input-field input:focus {
-    border-color: #0061f2;
-    box-shadow: 0 0 0 3px rgba(0, 97, 242, 0.1);
-  }
-  
-  .form-actions {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    margin-bottom: 25px;
-  }
-  
-  .forgot-password {
-    color: #0061f2;
-    text-decoration: none;
-    font-weight: 500;
-  }
-  
-  .btn-login {
-    width: 100%;
-    padding: 12px;
-    background-color: #0061f2;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: background 0.3s;
-  }
-  
-  .btn-login:hover {
-    background-color: #0050c8;
-  }
-  
-  .error-message {
-    background-color: #fde8e8;
-    color: #c81e1e;
-    padding: 10px;
-    border-radius: 6px;
-    font-size: 14px;
-    margin-bottom: 15px;
-  }
-  
-  .login-footer {
-    margin-top: 25px;
-    border-top: 1px solid #eee;
-    padding-top: 15px;
-    font-size: 12px;
-    color: #999;
-  }
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-lg);
+  background: var(--bg-primary);
+  position: relative;
+  overflow: hidden;
+}
 
+/* Animated Background */
+.login-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(6, 182, 212, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.1) 0%, transparent 40%);
+  animation: backgroundMove 20s ease-in-out infinite;
+  z-index: 0;
+}
 
-  /* Login.css */
+@keyframes backgroundMove {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(2%, 2%) rotate(1deg); }
+  50% { transform: translate(0, 4%) rotate(0deg); }
+  75% { transform: translate(-2%, 2%) rotate(-1deg); }
+}
 
-/* ... Önceki CSS kodlarının çoğu aynı kalabilir ... */
+/* Login Container */
+.login-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-xl);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--glass-shadow);
+  animation: fadeIn 0.5s ease;
+}
 
-/* YENİ EKLENEN KISIM: Rol Seçici */
+/* Header */
+.login-header {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.icon-circle {
+  width: 70px;
+  height: 70px;
+  background: var(--gradient-primary);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;
+  color: white;
+  margin: 0 auto var(--space-md);
+  box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+}
+
+.login-header h2 {
+  color: var(--text-primary);
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  margin-bottom: var(--space-xs);
+}
+
+.login-header p {
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+}
+
+/* Role Selector */
 .role-selector {
-    display: flex;
-    justify-content: space-between;
-    background-color: #f0f2f5;
-    padding: 5px;
-    border-radius: 8px;
-    margin-bottom: 25px;
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-xs);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
 }
 
 .role-btn {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    color: #666;
-    border-radius: 6px;
-    transition: all 0.3s ease;
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.role-btn:hover {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .role-btn.active {
-    background-color: #ffffff;
-    color: #0061f2;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
 }
 
-.role-btn:hover:not(.active) {
-    background-color: #e4e6eb;
+/* Input Groups */
+.input-group {
+  margin-bottom: var(--space-lg);
 }
 
-/* Diğer mevcut stiller (wrapper, input-field vb.) aynen kalmalı */
-.login-wrapper {
-    background: linear-gradient(135deg, #0061f2 0%, #6900c7 100%);
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Segoe UI', sans-serif;
+.input-group label {
+  display: block;
+  margin-bottom: var(--space-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  font-weight: 500;
 }
-  
-.login-container {
-    background-color: #ffffff;
-    width: 400px; /* Biraz genişlettik */
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    text-align: center;
+
+.input-field {
+  position: relative;
 }
-/* ... Geri kalan input, button stilleri önceki cevaptaki gibi ... */
-.input-group { margin-bottom: 20px; text-align: left; }
-.input-group label { display: block; margin-bottom: 8px; color: #555; font-weight: 600; font-size: 14px; }
-.input-field { position: relative; display: flex; align-items: center; }
-.input-field .icon { position: absolute; left: 15px; color: #aaa; display: flex; }
-.input-field input { width: 100%; padding: 12px 12px 12px 40px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; transition: border 0.3s; }
-.input-field input:focus { border-color: #0061f2; box-shadow: 0 0 0 3px rgba(0, 97, 242, 0.1); }
-.btn-login { width: 100%; padding: 12px; background-color: #0061f2; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background 0.3s; margin-top: 10px;}
-.btn-login:hover { background-color: #0050c8; }
-.error-message { background-color: #fde8e8; color: #c81e1e; padding: 10px; border-radius: 6px; font-size: 14px; margin-bottom: 15px; }
-.login-footer { margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px; font-size: 12px; color: #999; }
-.icon-circle { width: 60px; height: 60px; background-color: #e1f0ff; color: #0061f2; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; margin: 0 auto 15px; }
+
+.input-field .icon {
+  position: absolute;
+  left: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: var(--font-lg);
+  transition: color var(--transition-fast);
+}
+
+.input-field input {
+  width: 100%;
+  padding: var(--space-md) var(--space-md) var(--space-md) 48px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-md);
+  font-family: var(--font-family);
+  transition: all var(--transition-normal);
+}
+
+.input-field input::placeholder {
+  color: var(--text-muted);
+}
+
+.input-field input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.input-field input:focus + .icon,
+.input-field:focus-within .icon {
+  color: var(--accent-primary);
+}
+
+/* Login Button */
+.btn-login {
+  width: 100%;
+  padding: var(--space-md);
+  background: var(--gradient-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: var(--font-lg);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-sm);
+  transition: all var(--transition-normal);
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.btn-login:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+}
+
+.btn-login:active {
+  transform: translateY(0);
+}
+
+.btn-login:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Error Message */
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  margin-bottom: var(--space-md);
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Footer */
+.login-footer {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--glass-border);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+}

@@ -200,7 +200,7 @@ if (isReportOpen) {
           
           <button className="btn-ai-check" onClick={handleRunAi} disabled={aiLoading}>
              {aiLoading ? <FaSync className="fa-spin"/> : <FaRobot/>} 
-             {aiLoading ? " Analyzing..." : " Run AI Check All"}
+             {aiLoading ? " Analyzing..." : " START FACE RECOGNATION"}
           </button>
 
           <div className="search-wrap" style={{marginTop:'10px'}}>
@@ -220,8 +220,6 @@ if (isReportOpen) {
               key={student.id} 
               className={`student-item ${selectedStudent?.id === student.id ? 'active' : ''}`}
               onClick={() => setSelectedStudent(student)}
-              style={student.status === 'violation' ? {borderLeft:'4px solid red', background:'#fff5f5'} : 
-                     student.status === 'pending' ? {borderLeft:'4px solid orange'} : {}}
             >
               <div className="s-info">
                 <h4>{student.name}</h4>

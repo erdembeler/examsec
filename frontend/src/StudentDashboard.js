@@ -8,8 +8,8 @@ import {
 
 const StudentDashboard = () => {
   // localStorage'dan bilgileri al
-  const studentName = localStorage.getItem('fullName') || "Öğrenci";
-  const studentId = localStorage.getItem('userId') || "Bilinmiyor";
+  const studentName = localStorage.getItem('fullName') || "Student";
+  const studentId = localStorage.getItem('userId') || "None";
   const referencePhoto = localStorage.getItem('referencePhoto'); // ✅ Direkt localStorage'dan
 
   // State tanımları
@@ -122,7 +122,7 @@ useEffect(() => {
           <div className="std-profile">
             <div className="profile-icon"><FaUserGraduate /></div>
             <div className="profile-text">
-              <h2>Öğrenci Paneli</h2>
+              <h2>Student Panel</h2>
               <p>{studentName} ({studentId})</p>
             </div>
           </div>
@@ -132,7 +132,7 @@ useEffect(() => {
         <div className="std-content">
           {/* SINAV KARTI */}
           <div className="std-card exam-card">
-            <div className="card-badge">Aktif</div>
+            <div className="card-badge">Active</div>
             {activeExam ? (
               <>
                 <h3>{activeExam.title}</h3>
@@ -145,24 +145,24 @@ useEffect(() => {
                 <div className="exam-action">
                   {verificationStatus === 'success' ? (
                     <div className="status-box success">
-                      <FaCheckCircle/> <p>Gönderildi! Onay Bekleniyor.</p>
+                      <FaCheckCircle/> <p>Sent! Waiting for verify.</p>
                     </div>
                   ) : (
                     <button className="btn-start-exam" onClick={openCamera}>
-                      <FaIdCard/> Sınava Giriş Yap
+                      <FaIdCard/> Enter the Exam
                     </button>
                   )}
                 </div>
               </>
             ) : (
-              <p>Aktif sınav bulunamadı.</p>
+              <p>No Active Exam.</p>
             )}
           </div>
 
 {/* REFERANS FOTOĞRAF BÖLÜMÜ */}
 <div className="reference-section">
-  <h3><FaIdCard /> Kayıt Fotoğrafınız</h3>
-  <p className="section-subtitle">Üniversite sistemindeki fotoğrafınız</p>
+  <h3><FaIdCard /> Local Photo</h3>
+  <p className="section-subtitle">Your MUBIS photo</p>
   <div className="reference-photo-container">
     {referencePhoto ? (
       <img 
@@ -173,7 +173,7 @@ useEffect(() => {
     ) : (
       <div className="no-photo">
         <FaExclamationCircle />
-        <span>Fotoğraf bulunamadı</span>
+        <span>No Photograph</span>
       </div>
     )}
   </div>
@@ -187,13 +187,13 @@ useEffect(() => {
         <div className="camera-modal-overlay">
           <div className="camera-modal">
             <div className="modal-header">
-              <h3>Yüz Doğrulama</h3>
+              <h3>Face Recognation</h3>
               <button className="btn-close" onClick={closeCamera}><FaTimes/></button>
             </div>
             <div className="camera-view">
               {verificationStatus === 'sending' && (
                 <div className="loader-overlay">
-                  <FaSpinner className="fa-spin"/> Gönderiliyor...
+                  <FaSpinner className="fa-spin"/> Sending...
                 </div>
               )}
               {!livePhoto ? (
@@ -206,13 +206,13 @@ useEffect(() => {
             <div className="modal-actions">
               {!livePhoto ? (
                 <button className="btn-capture" onClick={capturePhoto}>
-                  <FaCamera/> Çek
+                  <FaCamera/> SNAP
                 </button>
               ) : (
                 verificationStatus !== 'sending' && verificationStatus !== 'success' && (
                   <div className="action-buttons">
-                    <button className="btn-retry" onClick={retryPhoto}>Tekrar</button>
-                    <button className="btn-send" onClick={sendToProctor}>Gönder</button>
+                    <button className="btn-retry" onClick={retryPhoto}>Retake</button>
+                    <button className="btn-send" onClick={sendToProctor}>Sent</button>
                   </div>
                 )
               )}

@@ -60,7 +60,7 @@ const ProctorExams = () => {
                 
                 <div className="card-top">
                     <span className={`exam-status ${exam.is_active ? 'active' : 'finished'}`}>
-      {exam.is_active ? '🟢 Aktif' : '🔴 Bitmiş'}
+      {exam.is_active ? '🟢 Active' : '🔴 Finished'}
     </span>
                     <span className="course-code">ID: {exam.id}</span>
                 </div>

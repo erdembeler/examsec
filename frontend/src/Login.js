@@ -20,14 +20,14 @@ const Login = () => {
     setError('');
 
     if (newRole === 'student') {
-      setIdentifier('220706011');
-      setPassword('123');
+      setIdentifier('220706001');
+      setPassword('123456');
     } else if (newRole === 'admin') {
-      setIdentifier('admin_erdem');
-      setPassword('pass123');
+      setIdentifier('instructor1');
+      setPassword('123456');
     } else if (newRole === 'proctor') {
-      setIdentifier('proctor_ali');
-      setPassword('pass123');
+      setIdentifier('proctor1');
+      setPassword('123456');
     } else {
       setIdentifier('');
       setPassword('');
