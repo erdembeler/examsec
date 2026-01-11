@@ -1,7 +1,7 @@
 # 🛡️ Exam Security System
 
 > **AI-Powered Identity Verification & Seating Management for Physical Examinations**  
-> *Final Project — Software Testing & Validation Course (SENG 405)*
+> *Final Project — Software Testing & Validation Course *
 
 ![Status](https://img.shields.io/badge/Status-Completed-success)
 ![Frontend](https://img.shields.io/badge/Frontend-React.js-61DAFB)
