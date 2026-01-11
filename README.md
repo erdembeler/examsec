@@ -13,9 +13,11 @@
 ---
 
 ## 👥 Team Members
+
+|----------|------|
 |Erdem BELER	|220706011	|Fullstack / Integration / Database|
 |Taylan Alp ÇAKI	|220706010	|Frontend / ML / Testing|
-
+---
 ## 🔗 Project Links
 
 | Resource | Link |
