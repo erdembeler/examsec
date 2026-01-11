@@ -9,8 +9,8 @@ import {
 const Login = () => {
   // Varsayılan olarak Öğrenci seçili ve bilgileri dolu gelsin
   const [role, setRole] = useState('student'); 
-  const [identifier, setIdentifier] = useState('220706011'); 
-  const [password, setPassword] = useState('123');
+  const [identifier, setIdentifier] = useState('220706001'); 
+  const [password, setPassword] = useState('123456');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
