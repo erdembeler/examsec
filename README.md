@@ -14,9 +14,14 @@
 
 ## 👥 Team Members
 
-| Erdem BELER | 220706011 | Fullstack / Integration / Database |
-| Taylan Alp ÇAKI | 220706010 | Frontend / ML / Testing |
----
+
+| Name | Student ID | Role |
+|------|------------|------|
+| Taylan Alp ÇAKI| 220706010| Frontend Developer / ML / Testing |
+| Erdem BELER | 220706011 | FullStack / Integration / Database |
+
+
+
 ## 🔗 Project Links
 
 | Resource | Link |
@@ -35,8 +40,9 @@ The **Exam Security System** is a comprehensive web application designed to digi
 - **Inefficient Seating Arrangements:** Automated seating algorithms prevent cheating by strategically placing students
 - **Manual Attendance Tracking:** Real-time digital check-in with photo evidence
 
-### System Architecture
+## 🏗️ System Architecture
 
+```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           EXAM SECURITY SYSTEM                              │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -58,19 +64,14 @@ The **Exam Security System** is a comprehensive web application designed to digi
                             │   (DeepFace)    │
                             │                 │
                             └─────────────────┘
+```
 
-─────────────────────────────────────────────────────────────────────────────
+**Endpoints:**
+- Frontend (Vercel): https://examsec.vercel.app
+- Backend (Render): https://examsec-backend.onrender.com/api
+- Database (Neon): PostgreSQL Cloud
 
-ENDPOINTS:
-
-  Frontend (Vercel)    :  https://examsec.vercel.app
-  Backend  (Render)    :  https://your-backend.onrender.com/api
-  Database (Neon)      :  PostgreSQL Cloud
-
-─────────────────────────────────────────────────────────────────────────────
-
-USER ROLES:
-
+```
   ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
   │   STUDENT    │    │  INSTRUCTOR  │    │   PROCTOR    │
   │              │    │   (admin)    │    │              │
@@ -78,11 +79,7 @@ USER ROLES:
   │  - Photo     │    │  - Start/End │    │  - Violations│
   │  - Status    │    │  - Reports   │    │  - Approve   │
   └──────────────┘    └──────────────┘    └──────────────┘
-
-
-<!-- SCREENSHOT: System Architecture Diagram -->
-![System Architecture](./screenshots/architecture.png)
-
+```
 ---
 
 ## ✨ Key Features
@@ -121,8 +118,11 @@ USER ROLES:
 <!-- SCREENSHOT: Seating Plan Grid -->
 ![Seating Plan](./screenshots/seating-plan.png)
 
-<!-- SCREENSHOT: Butterfly Algorithm Result -->
-![Butterfly Algorithm](./screenshots/butterfly-seating.png)
+<!-- SCREENSHOT: Arrange an Exam -->
+![Butterfly Algorithm](./screenshots/instructor-exam.png)
+
+<!-- SCREENSHOT: Get Report -->
+![Butterfly Algorithm](./screenshots/instructor-report.png)
 
 
 ### 👮‍♂️ Proctor Module
@@ -137,6 +137,9 @@ USER ROLES:
 | Status Override | Manually update student status when needed |
 
 <!-- SCREENSHOT: Proctor Dashboard -->
+![Proctor Dashboard](./screenshots/proctor-dashboard-main.png)
+
+<!-- SCREENSHOT: Proctor Dashboard -->
 ![Proctor Dashboard](./screenshots/proctor-dashboard.png)
 
 <!-- SCREENSHOT: AI Verification Result -->
@@ -145,9 +148,12 @@ USER ROLES:
 <!-- SCREENSHOT: Violation Modal -->
 ![Violation Logging](./screenshots/violation-modal.png)
 
+<!-- SCREENSHOT: Proctor Dashboard -->
+![Proctor Dashboard](./screenshots/proctor-report.png)
+
 ---
 
-### 🚀 Splash Screen (Maintenance Mode)
+### 🚀 Splash Screen 
 
 When the backend server is sleeping (Render free tier), users see an animated splash screen while waiting for the server to wake up:
 
@@ -168,7 +174,7 @@ When the backend server is sleeping (Render free tier), users see an animated sp
 When the frontend is in maintenance, users see an animated screen while waiting:
 
 <!-- SCREENSHOT: Splash Screen -->
-![Splash Screen](./screenshots/splash-screen.png)
+![Splash Screen](./screenshots/maintenance.png)
 
 ---
 
