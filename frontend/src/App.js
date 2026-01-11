@@ -1,4 +1,4 @@
-import React from 'react';
+import React , { useState }  from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './animations.css';
 
@@ -8,8 +8,20 @@ import ProctorExams from './ProctorExams';       // Sınav Listesi
 import ProctorDashboard from './ProctorDashboard'; // Sınav Detayı (Kelebek/Onay Ekranı)
 import StudentDashboard from './StudentDashboard'; // Öğrenci Ekranı
 import InstructorDashboard from './InstructorDashboard'; // Öğretmen Ekranı
-
+import SplashScreen from './Splashscreen';
 function App() {
+  const [isReady, setIsReady] = useState(false);
+
+  // Splash screen tamamlanınca
+  const handleReady = () => {
+    setIsReady(true);
+  };
+
+  // Henüz hazır değilse Splash göster
+  if (!isReady) {
+    return <SplashScreen onReady={handleReady} />;
+  }
+
   return (
     <Router>
       <Routes>
