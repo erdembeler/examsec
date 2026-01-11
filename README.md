@@ -12,13 +12,17 @@
 
 ---
 
+## 👥 Team Members
+Erdem BELER	220706011	Fullstack / Integration / Database
+Taylan Alp ÇAKI	220706010	Frontend / ML / Testing
+
 ## 🔗 Project Links
 
 | Resource | Link |
 |----------|------|
 | 🌐 Live Demo | [https://examsec.vercel.app](https://examsec.vercel.app) |
 | 📋 Jira Board | [Exam Security System Board](https://taylanalp12.atlassian.net/jira/software/projects/ESS/boards/4) |
-| 🗄️ Repository | [Bitbucket](https://github.com/erdembeler/examsec) |
+| 🗄️ Repository | [Github](https://github.com/erdembeler/examsec) |
 
 ---
 
@@ -103,8 +107,8 @@ USER ROLES:
 
 | Feature | Description |
 |---------|-------------|
-| Exam Selection | Choose from available exams with department filtering |
-| Visual Seating Grid | Interactive 3x4 classroom layout with drag-and-drop |
+| Exam Selection | Choose from available exams |
+| Visual Seating Grid | Interactive 3x4 classroom layout with select-and-drop |
 | Random Assignment | One-click random seat assignment |
 | Butterfly Algorithm | Alternating department pattern to prevent cheating |
 | Save & Load Plans | Persist seating arrangements to database |
@@ -119,21 +123,15 @@ USER ROLES:
 <!-- SCREENSHOT: Butterfly Algorithm Result -->
 ![Butterfly Algorithm](./screenshots/butterfly-seating.png)
 
-#### Butterfly Seating Algorithm
-
-The butterfly algorithm alternates students from different departments to minimize cheating.
-
-
----
 
 ### 👮‍♂️ Proctor Module
 
 | Feature | Description |
 |---------|-------------|
 | Student List | View all students with photos and current status |
-| AI Verification | One-click face comparison (reference vs live photo) |
+| ML Verification | One-click face comparison (reference vs live photo) |
 | Side-by-Side View | Compare reference and check-in photos visually |
-| Seat Compliance | Verify student is sitting in assigned seat |
+| Seat Compliance | Visualize-verify student is sitting in assigned seat |
 | Violation Logging | Record violations with reason, notes, and evidence |
 | Status Override | Manually update student status when needed |
 
@@ -164,6 +162,15 @@ When the backend server is sleeping (Render free tier), users see an animated sp
 
 ---
 
+### 🚀 Maintenance Mode
+
+When the frontend is in maintenance, users see an animated screen while waiting:
+
+<!-- SCREENSHOT: Splash Screen -->
+![Splash Screen](./screenshots/splash-screen.png)
+
+---
+
 ## 🛠️ Tech Stack
 
 ### Frontend
@@ -180,7 +187,7 @@ When the backend server is sleeping (Render free tier), users see an animated sp
 | Flask | REST API Framework |
 | Flask-CORS | Cross-Origin Resource Sharing |
 | psycopg2 | PostgreSQL Adapter |
-| DeepFace | Face Verification ML |
+| Facerecognation | Face Verification ML |
 | Render | Hosting & Deployment |
 
 ### Database
@@ -306,11 +313,4 @@ TEST COVERAGE SUMMARY
   ────────────────────┼──────────────────────────────┼───────
   TOTAL               │                              │ 35
 ─────────────────────────────────────────────────────────────────────────────
-
-
-
-## 👥 Team Members
-Erdem BELER	220706011	Fullstack / Integration / Database
-Taylan Alp ÇAKI	220706010	Frontend / ML / Testing
-
 
