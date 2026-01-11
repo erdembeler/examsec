@@ -7,8 +7,8 @@
 ![Frontend](https://img.shields.io/badge/Frontend-React.js-61DAFB)
 ![Backend](https://img.shields.io/badge/Backend-Flask-000000)
 ![Database](https://img.shields.io/badge/Database-PostgreSQL-336791)
-![ML](https://img.shields.io/badge/ML-DeepFace-FF6F00)
-![Tests](https://img.shields.io/badge/Tests-34%20Passed-brightgreen)
+![ML](https://img.shields.io/badge/Face-Recognation-FF6F00)
+![Tests](https://img.shields.io/badge/Tests-35%20Passed-brightgreen)
 
 ---
 
